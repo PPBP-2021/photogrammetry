@@ -1,3 +1,10 @@
-import imageprocessing as ip
+import imageprocessing as imgp
+import image_utils as imgutils
 
-ip.segmentate_grayscale(r"testimages/man.jpg", 5)
+
+import cv2
+import plotly.express as px
+
+seg_img = imgp.segmentate_grayscale(
+    r"testimages/man.jpg", 240, explain=True)
+imgutils.show_img(seg_img)
