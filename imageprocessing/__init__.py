@@ -1,1 +1,1 @@
-from imageprocessing.grayscalethreshold import segmentate_grayscale
+from imageprocessing.segmentation import segmentate_grayscale
