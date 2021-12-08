@@ -1,5 +1,4 @@
 from typing import Union
-from PIL.Image import MAXCOVERAGE
 import cv2
 import numpy as np
 
@@ -59,7 +58,7 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
 
     # Step 4: Find largest contour
     largest_cntr = np.zeros(image.shape, dtype=image.dtype)
-    
+
     contours, hierarchy = cv2.findContours(
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
