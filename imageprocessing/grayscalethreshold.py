@@ -58,21 +58,27 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
         imgutils.show_img(mask, title="Mask")
 
     # Step 4: Find largest contour
+    largest_cntr = np.zeros(image.shape, dtype=image.dtype)
+    
     contours, hierarchy = cv2.findContours(
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
-    lc = cv2.drawContours(image=image,
-                          contours=contours,
-                          contourIdx=-1,
-                          color=255,
-                          thickness=3)
-    largest_cntr = max(contours, key=cv2.contourArea)
+    largest_cntr_indx = max(enumerate(contours),
+                            key=lambda x: cv2.contourArea(x[1]))[0]
 
-    x, y, w, h = cv2.boundingRect(largest_cntr)
-    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    largest_cntr = cv2.drawContours(image=largest_cntr,
+                                    contours=contours,
+                                    contourIdx=largest_cntr_indx,
+                                    color=255,
+                                    thickness=cv2.FILLED,
+                                    hierarchy=hierarchy)
+
+    largest_cntr = cv2.cvtColor(largest_cntr, cv2.COLOR_BGR2GRAY)
+
     if explain:
-        imgutils.show_img(image, title="Largest Contour")
+        imgutils.show_img(largest_cntr, title="Largest Contour")
 
-    image = cv2.bitwise_and(image, image, mask=mask)
+    image = cv2.bitwise_and(image, image, mask=largest_cntr)
+
     return image
