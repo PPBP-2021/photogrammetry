@@ -6,6 +6,7 @@ testimages/
 *.py[cod]
 *$py.class
 
+*.stl
 # C extensions
 *.so
 
