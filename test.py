@@ -11,4 +11,5 @@ seg_img = imgp.segmentate_grayscale(
 litophane = mb.litophane_from_image(seg_img,
                                     resolution=0.5,
                                     z_scale=lambda z: z/20)
+imgutils.show_stl(litophane)
 litophane.save("litophane.stl")
