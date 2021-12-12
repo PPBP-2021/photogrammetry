@@ -10,12 +10,12 @@ import image_utils
 from imageprocessing.segmentation import segmentate_grayscale
 
 
-def litograph_from_image(
+def litophane_from_image(
     seg_img: np.ndarray,
     resolution: float = 1.0,
     z_scale: Callable[[float], float] = lambda z: z
 ) -> Mesh:
-    """Construct a 3D litograph of a segmentated image.
+    """Construct a 3D litophane of a segmentated image.
 
     Parameters
     ----------
