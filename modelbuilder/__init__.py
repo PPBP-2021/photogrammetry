@@ -30,6 +30,7 @@ def litophane_from_image(
 
     seg_img = cv2.resize(seg_img, (0, 0), fx=resolution, fy=resolution)
     seg_img = cv2.cvtColor(seg_img, cv2.COLOR_BGR2GRAY)
+
     height, width = seg_img.shape
 
     vertices = []
@@ -46,13 +47,22 @@ def litophane_from_image(
     for i in range(height-1):
         for j in range(width-1):
             top_left = vertices[i][j]
+            top_right = vertices[i][j+1]
             bottom_right = vertices[i+1][j+1]
-            face_1 = [top_left, vertices[i+1][j], bottom_right]
-            face_2 = [top_left, vertices[i][j+1], bottom_right]
-            faces.append(face_1)
-            faces.append(face_2)
+            bottom_left = vertices[i+1][j]
+            
+            if top_left[2] == 0 or bottom_right[2] == 0:
+                continue
+
+            if bottom_left[2] != 0:
+                faces.append([top_left, bottom_left, bottom_right])
+            if top_right[2] != 0:
+                faces.append([top_left, top_right, bottom_right])
+           
+    
 
     faces = np.array(faces)
     mesh = Mesh(np.zeros(faces.shape[0], dtype=Mesh.dtype))
     mesh.vectors = faces
+
     return mesh
