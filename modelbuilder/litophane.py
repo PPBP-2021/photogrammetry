@@ -101,5 +101,60 @@ def litophane_from_stereo(
     Mesh
         [description]
     """
+    img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
+    img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
+    img_left = cv2.medianBlur(img_left, 5)
+    img_right = cv2.medianBlur(img_right, 5)
 
-    pass
+    minDisparity = 0
+    numDisparities = 64
+    blockSize = 8
+    disp12MaxDiff = 1
+    uniquenessRatio = 10
+    speckleWindowSize = 10
+    speckleRange = 8
+
+    # Creating an object of StereoSGBM algorithm
+    stereo = cv2.StereoSGBM_create(minDisparity=minDisparity,
+                                   numDisparities=numDisparities,
+                                   blockSize=blockSize,
+                                   disp12MaxDiff=disp12MaxDiff,
+                                   uniquenessRatio=uniquenessRatio,
+                                   speckleWindowSize=speckleWindowSize,
+                                   speckleRange=speckleRange
+                                   )
+
+    disparity = stereo.compute(img_left, img_right).astype(np.float32)
+    disparity = cv2.normalize(disparity, 0, 255, cv2.NORM_MINMAX)
+
+    height, width, _ = img_left.shape
+    X = np.array([i/height for i in range(width)]*height)
+    Y = np.array([(height-i//width)/height for i in range(height*width)])
+    Z = ((baseline * focal_length) / disparity).reshape(height*width)
+
+    vertices = []
+    faces = []
+
+    vertices = np.column_stack((X, Y, Z))
+    vertices = vertices.reshape((height, width, 3))
+
+    for i in range(height-1):
+        for j in range(width-1):
+            top_left = vertices[i][j]
+            top_right = vertices[i][j+1]
+            bottom_right = vertices[i+1][j+1]
+            bottom_left = vertices[i+1][j]
+
+            if top_left[2] == 0 or bottom_right[2] == 0:
+                continue
+
+            if bottom_left[2] != 0:
+                faces.append([top_left, bottom_left, bottom_right])
+            if top_right[2] != 0:
+                faces.append([top_left, top_right, bottom_right])
+
+    faces = np.array(faces)
+    mesh = Mesh(np.zeros(faces.shape[0], dtype=Mesh.dtype))
+    mesh.vectors = faces
+
+    return mesh
