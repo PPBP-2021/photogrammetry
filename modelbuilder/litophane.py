@@ -75,62 +75,81 @@ def litophane_from_stereo(
     focal_length: float,
     fov: float,
     resolution: float = 1.0,
-    z_scale: Callable[[float], float] = lambda z: z
+    z_scale: Callable[[float], float] = lambda z: z,
+    match_features: bool = False
 ) -> Mesh:
     """Create a 3d model from 2 images using stereo depth estimation.
 
     Parameters
     ----------
     img_left : np.ndarray
-        [description]
+        The Left image data in BGR format.
     img_right : np.ndarray
-        [description]
+        The Right image data in BGR format.
     baseline : float
-        [description]
+        Distance between both cameras in mm.
     focal_length : float
-        [description]
+        Focal Lenght of the camera in mm.
     fov : float
-        [description]
+        Horizontal FOV of the camera.
     resolution : float, optional
-        [description], by default 1.0
+        Changes the images resolution before calculating the depth, increses performance if lower than 1.0, by default 1.0
     z_scale : Callable[[float], float], optional
-        [description], by default lambdaz:z
+        Scale the calculated depth value using this function, by default lambdaz:z
+    match_features : bool, optional
+        Uses opencvs feature matching algorithm if true, else calculate disparity by hand assuming ideal image alignment.
+
 
     Returns
     -------
     Mesh
-        [description]
+        The Mesh using the calculated depth information from both images.
     """
-    img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
-    img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
-    img_left = cv2.medianBlur(img_left, 5)
-    img_right = cv2.medianBlur(img_right, 5)
+    # img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
+    # img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
+    # img_left = cv2.medianBlur(img_left, 5)
+    # img_right = cv2.medianBlur(img_right, 5)
 
-    minDisparity = 0
-    numDisparities = 64
-    blockSize = 8
-    disp12MaxDiff = 1
-    uniquenessRatio = 10
-    speckleWindowSize = 10
-    speckleRange = 8
+    img_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
+    img_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
 
-    # Creating an object of StereoSGBM algorithm
-    stereo = cv2.StereoSGBM_create(minDisparity=minDisparity,
-                                   numDisparities=numDisparities,
-                                   blockSize=blockSize,
-                                   disp12MaxDiff=disp12MaxDiff,
-                                   uniquenessRatio=uniquenessRatio,
-                                   speckleWindowSize=speckleWindowSize,
-                                   speckleRange=speckleRange
-                                   )
+    height, width = img_left.shape
 
-    disparity = stereo.compute(img_left, img_right).astype(np.float32)
-    disparity = cv2.normalize(disparity, 0, 255, cv2.NORM_MINMAX)
+    if match_features:
+        win_size = 3
+        min_disp = 50
+        num_disp = 16 * 30
+        stereo = cv2.StereoSGBM_create(minDisparity=min_disp,
+                                       numDisparities=num_disp,
+                                       blockSize=5,
+                                       uniquenessRatio=0,
+                                       speckleWindowSize=5,
+                                       speckleRange=120,
+                                       disp12MaxDiff=20,
+                                       P1=8*3*win_size**2,
+                                       P2=32*3*win_size**2)
 
-    height, width, _ = img_left.shape
+        stereo = cv2.StereoBM_create(numDisparities=16*5, blockSize=25)
+        disparity = stereo.compute(img_left, img_right).astype(np.float32)
+
+    else:
+        ...
+        # normalize both images to the same rect size
+        # calculate disparity
+
+    image_utils.show_img_grayscale(disparity)
+
+    raise Exception("break lul")
+
+    disparity[disparity == 0] = -1
+
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
-    Z = ((baseline * focal_length) / disparity).reshape(height*width)
+
+    Z = z_scale(((baseline * focal_length) / disparity).reshape(height*width))
+
+    Z[Z < 0] = 0
+    Z[Z > 10] = 10
 
     vertices = []
     faces = []
