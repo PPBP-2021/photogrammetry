@@ -1,4 +1,5 @@
 from typing import Callable
+from numpy.lib.function_base import disp
 
 import stl
 import numpy as np
@@ -90,6 +91,8 @@ def litophane_from_stereo(
         Distance between both cameras in mm.
     focal_length : float
         Focal Lenght of the camera in mm.
+    sensor width : float
+
     fov : float
         Horizontal FOV of the camera.
     resolution : float, optional
@@ -105,51 +108,68 @@ def litophane_from_stereo(
     Mesh
         The Mesh using the calculated depth information from both images.
     """
-    # img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
-    # img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
-    # img_left = cv2.medianBlur(img_left, 5)
-    # img_right = cv2.medianBlur(img_right, 5)
+    img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
+    img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
 
     img_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
     img_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
 
     height, width = img_left.shape
 
-    if match_features:
-        win_size = 3
-        min_disp = 50
-        num_disp = 16 * 30
-        stereo = cv2.StereoSGBM_create(minDisparity=min_disp,
-                                       numDisparities=num_disp,
-                                       blockSize=5,
-                                       uniquenessRatio=0,
-                                       speckleWindowSize=5,
-                                       speckleRange=120,
-                                       disp12MaxDiff=20,
-                                       P1=8*3*win_size**2,
-                                       P2=32*3*win_size**2)
+    orb = cv2.ORB_create(int(np.sqrt(height*width)))
+    kp_left, des_left = orb.detectAndCompute(img_left, None)
+    kp_right, des_right = orb.detectAndCompute(img_right, None)
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = matcher.match(des_left, des_right)
 
-        stereo = cv2.StereoBM_create(numDisparities=16*5, blockSize=25)
-        disparity = stereo.compute(img_left, img_right).astype(np.float32)
+    # take the best matches
+    matches = sorted(matches, key=lambda x: x.distance)[:30]
 
-    else:
-        ...
-        # normalize both images to the same rect size
-        # calculate disparity
+    img_with_matches = cv2.drawMatches(
+        img_left, kp_left, img_right, kp_right, matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    image_utils.show_img(
+        img_with_matches, "Found matches between left and right image")
+    left_points = []
+    right_points = []
+    for m in matches:
+        left_points.append(kp_left[m.queryIdx].pt)
+        right_points.append(kp_right[m.trainIdx].pt)
 
-    image_utils.show_img_grayscale(disparity)
+    left_points = np.array(left_points)
+    right_points = np.array(right_points)
+    fundamental, mask = cv2.findFundamentalMat(
+        left_points, right_points, cv2.FM_RANSAC, 1.0, 0.98)
+    _, h_left, h_right = cv2.stereoRectifyUncalibrated(
+        left_points, right_points, fundamental, (width, height))
 
-    raise Exception("break lul")
+    left_rectified = cv2.warpPerspective(img_left, h_left, (width, height))
+    right_rectified = cv2.warpPerspective(img_right, h_right, (width, height))
+
+    rectified_together = np.concatenate(
+        (left_rectified, right_rectified), axis=1)
+    image_utils.show_img(rectified_together, "Rectified images")
+
+    focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi/180)
+
+    win_size = 3
+    min_disp = 50
+    num_disp = 16 * 30
+    stereo = cv2.StereoSGBM_create(128,31)
+
+    #stereo = cv2.StereoBM_create(numDisparities=16*5, blockSize=25)
+    disparity = stereo.compute(
+        left_rectified, right_rectified).astype(np.float32)
+
+    disparity = np.abs(disparity)
+    image_utils.show_img_grayscale(disparity, "Disparity map")
 
     disparity[disparity == 0] = -1
 
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
-
+    
     Z = z_scale(((baseline * focal_length) / disparity).reshape(height*width))
-
-    Z[Z < 0] = 0
-    Z[Z > 10] = 10
+    Z[Z<0] = 0
 
     vertices = []
     faces = []
