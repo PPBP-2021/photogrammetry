@@ -1,2 +1,2 @@
 from modelbuilder.litophane import litophane_from_image
-from modelbuilder.litophane import litophane_from_stereo
+from modelbuilder.litophane import litophane_from_stereo, match_keypoints, calculate_disparity

@@ -1,14 +1,9 @@
-from typing import Callable
-from numpy.lib.function_base import disp
+from typing import Callable, List, Tuple
 
-import stl
 import numpy as np
 from stl.mesh import Mesh
 import cv2
 import image_utils
-
-
-from imageprocessing.segmentation import segmentate_grayscale
 
 
 def litophane_from_image(
@@ -106,70 +101,36 @@ def litophane_from_stereo(
     Returns
     -------
     Mesh
-        The Mesh using the calculated depth information from both images.
+        The Mesh using the calculated depth information from both images.    
     """
+
+    # start with optional resize of the images
     img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
     img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
 
+    # grayscale
     img_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
     img_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
 
+    # extract the current image size
     height, width = img_left.shape
 
-    orb = cv2.ORB_create(int(np.sqrt(height*width)))
-    kp_left, des_left = orb.detectAndCompute(img_left, None)
-    kp_right, des_right = orb.detectAndCompute(img_right, None)
-    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = matcher.match(des_left, des_right)
+    left_points, right_points = match_keypoints(img_left, img_right)
 
-    # take the best matches
-    matches = sorted(matches, key=lambda x: x.distance)[:30]
+    disparity = calculate_disparity(
+        left_points, right_points, img_left, img_right)
 
-    img_with_matches = cv2.drawMatches(
-        img_left, kp_left, img_right, kp_right, matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    image_utils.show_img(
-        img_with_matches, "Found matches between left and right image")
-    left_points = []
-    right_points = []
-    for m in matches:
-        left_points.append(kp_left[m.queryIdx].pt)
-        right_points.append(kp_right[m.trainIdx].pt)
-
-    left_points = np.array(left_points)
-    right_points = np.array(right_points)
-    fundamental, mask = cv2.findFundamentalMat(
-        left_points, right_points, cv2.FM_RANSAC, 1.0, 0.98)
-    _, h_left, h_right = cv2.stereoRectifyUncalibrated(
-        left_points, right_points, fundamental, (width, height))
-
-    left_rectified = cv2.warpPerspective(img_left, h_left, (width, height))
-    right_rectified = cv2.warpPerspective(img_right, h_right, (width, height))
-
-    rectified_together = np.concatenate(
-        (left_rectified, right_rectified), axis=1)
-    image_utils.show_img(rectified_together, "Rectified images")
-
-    focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi/180)
-
-    win_size = 3
-    min_disp = 50
-    num_disp = 16 * 30
-    stereo = cv2.StereoSGBM_create(128,31)
-
-    #stereo = cv2.StereoBM_create(numDisparities=16*5, blockSize=25)
-    disparity = stereo.compute(
-        left_rectified, right_rectified).astype(np.float32)
-
-    disparity = np.abs(disparity)
     image_utils.show_img_grayscale(disparity, "Disparity map")
 
-    disparity[disparity == 0] = -1
+    return
 
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
-    
+
+    # calculate the focal length in pixels
+    focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi/180)
+    focal_length = 0.8 * width
     Z = z_scale(((baseline * focal_length) / disparity).reshape(height*width))
-    Z[Z<0] = 0
 
     vertices = []
     faces = []
@@ -197,3 +158,112 @@ def litophane_from_stereo(
     mesh.vectors = faces
 
     return mesh
+
+
+def match_keypoints(
+    img_left: np.ndarray,
+    img_right: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    height, width = img_left.shape
+
+    # get the important keypoints and descriptors for both images
+    orb: cv2.ORB = cv2.ORB_create(nfeatures=int(np.sqrt(height*width)))
+
+    kp_left: Tuple[cv2.KeyPoint]
+    des_left: np.ndarray
+    kp_left, des_left = orb.detectAndCompute(img_left, None)
+
+    kp_right: Tuple[cv2.KeyPoint]
+    des_right: np.ndarray
+    kp_right, des_right = orb.detectAndCompute(img_right, None)
+
+    # Match the descriptors between both images
+    matcher: cv2.BFMatcher = cv2.BFMatcher_create(normType=cv2.NORM_HAMMING,
+                                                  crossCheck=True
+                                                  )
+    matches: Tuple[cv2.DMatch] = matcher.match(des_left, des_right)
+
+    # Only use the best matches
+    matches = sorted(matches, key=lambda x: x.distance)[:30]
+
+    # Show the best matches between both images
+    img_with_matches: np.ndarray = cv2.drawMatches(img_left,
+                                                   kp_left,
+                                                   img_right,
+                                                   kp_right,
+                                                   matches,
+                                                   None,
+                                                   flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+                                                   )
+
+    # Extract the x, y coordinates of the match
+    left_points = np.array(
+        [kp_left[m.queryIdx].pt for m in matches], dtype=int)
+    right_points = np.array(
+        [kp_right[m.trainIdx].pt for m in matches], dtype=int)
+
+    return left_points, right_points, img_with_matches
+
+
+def calculate_disparity(
+    left_points: np.ndarray,
+    right_points: np.ndarray,
+    img_left: np.ndarray,
+    img_right: np.ndarray,
+
+    minDisparity=0,
+    numDisparities=5*16,
+    window_size=5,
+    disp12MaxDiff=12,
+    uniquenessRatio=10,
+    speckleWindowSize=50,
+    speckleRange=32,
+    preFilterCap=63,
+) -> np.ndarray:
+    height, width = img_left.shape
+
+    # We need to find our Fundamental Matrix
+    fundamental: np.ndarray
+    inliers: np.ndarray
+    fundamental, inliers = cv2.findFundamentalMat(left_points,
+                                                  right_points,
+                                                  cv2.FM_RANSAC
+                                                  )
+
+    # keep only the
+    left_points = left_points[inliers.ravel() == 1]
+    right_points = right_points[inliers.ravel() == 1]
+
+    # get the homography matrices for each image
+    h_left: np.ndarray
+    h_right: np.ndarray
+    _, h_left, h_right = cv2.stereoRectifyUncalibrated(left_points,
+                                                       right_points,
+                                                       fundamental,
+                                                       (width, height)
+                                                       )
+
+    left_rectified = cv2.warpPerspective(img_left, h_left, (width, height))
+    right_rectified = cv2.warpPerspective(img_right, h_right, (width, height))
+
+    # disparity range has to be tuned for each image pair
+    stereo = cv2.StereoSGBM_create(
+        minDisparity=minDisparity,
+        numDisparities=numDisparities,
+        blockSize=window_size,
+        P1=8 * 3 * window_size**2,
+        P2=32 * 3 * window_size**2,
+        disp12MaxDiff=disp12MaxDiff,
+        uniquenessRatio=uniquenessRatio,
+        speckleWindowSize=speckleWindowSize,
+        speckleRange=speckleRange,
+        preFilterCap=preFilterCap,
+        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
+    )
+
+    # disparity has to be divided by the bit size
+    # https://stackoverflow.com/questions/28959440/how-to-access-the-disparity-value-in-opencv
+    disparity = stereo.compute(left_rectified,
+                               right_rectified).astype(np.float32) / 16.0
+
+    return disparity
