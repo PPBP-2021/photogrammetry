@@ -80,7 +80,7 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
         imgutils.show_img(largest_cntr, title="Largest Contour")
 
     image = cv2.bitwise_and(image, image, mask=largest_cntr)
-    x,y,w,h = bounding_rect
-    image = image[y:y+h,x:x+w]
+    x, y, w, h = bounding_rect
+    image = image[y:y+h, x:x+w]
 
     return image
