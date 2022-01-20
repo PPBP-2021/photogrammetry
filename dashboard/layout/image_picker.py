@@ -1,23 +1,33 @@
-import glob
+from pathlib import Path
 import functools
 import os
+import json
+import sys
 
 import dash
 from dash import html
 from dash import dcc
 
-
 import dash_bootstrap_components as dbc
+from importlib_metadata import pathlib
 
 
-def get_asset_images(fullpath=False):
-    images = glob.glob("./**/*.png", recursive=True) + \
-        glob.glob("./**/*.jpg", recursive=True)
-    if not fullpath:
-        images = [path[path.find("assets"):] for path in images]
-    # remove stuff that isnt png or jpg
-    images = [path for path in images if len(path) > 3]
-    return images
+
+@functools.lru_cache()
+def get_asset_images():
+    asset_path = Path("./dashboard/assets")
+    configs = [p for p in asset_path.iterdir() if p.suffix == ".json"]
+    returns = []
+    for config in configs:
+        with open(config) as f:
+            config = json.load(f)
+            returns.append(
+                (asset_path/config["left_image"],
+                asset_path/config["right_image"],
+                config)
+            )
+            
+    return returns
 
 
 @functools.lru_cache()
@@ -28,9 +38,9 @@ def get_image_cards():
             [
                 dbc.Button(
                     dbc.CardImg(
-                        src=image,
+                        src=str(image[0]).replace("dashboard", "."),
                         top=True,
-                    ), id=os.path.splitext(image)[0], style={"padding": "0"}, color="secondary")
+                    ), id=image[0].stem, style={"padding": "0"}, color="secondary")
 
             ]
 
@@ -57,7 +67,7 @@ layout = html.Div(
         html.H2("Select Image", className="display-4"),
         html.Hr(),
         html.P(
-            "Select any image that you want to seperate from its background.", className="lead"
+            "Select any image", className="lead"
         ),
         dbc.Container(
             get_image_cards()

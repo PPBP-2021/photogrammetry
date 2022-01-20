@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 
 from dashboard import home
 from dashboard import image_segmentation
+from dashboard import litophane_from_stereo
 from dashboard.instance import app
 
 
@@ -23,5 +24,7 @@ def display_page(pathname):
         return home.layout
     elif pathname == "/segmentation":
         return image_segmentation.layout
+    elif pathname == "/litophane_from_stereo":
+        return litophane_from_stereo.layout
     else:
         return "404"

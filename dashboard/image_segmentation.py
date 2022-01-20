@@ -43,22 +43,22 @@ layout = [
     image_picker.layout,
     navbar.layout,
     html.Div([
-
-    ], id="graphs-out")
+    ]
+    , id="graphs-out")
 ]
 
 
 @app.callback(dash.Output("graphs-out", "children"),
-              [dash.Input(os.path.splitext(image_id)[0], "n_clicks") for image_id in image_picker.get_asset_images()])
+              [dash.Input(image_id[0].stem, "n_clicks") for image_id in image_picker.get_asset_images()])
 def select_image(*image_path):
 
     image_path = dash.callback_context.triggered[0]["prop_id"].replace(
         ".n_clicks", "")
 
     file_path = ""
-    for image in image_picker.get_asset_images(True):
-        if image_path in image:
-            file_path = image
+    for image in image_picker.get_asset_images():
+        if image_path in str(image[0]):
+            file_path = str(image[0])
             break
 
     titles = ["Before", "Segmentated"]
