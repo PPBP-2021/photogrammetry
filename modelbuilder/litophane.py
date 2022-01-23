@@ -1,9 +1,9 @@
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple, Union, List
 
-import numpy as np
-from stl.mesh import Mesh
 import cv2
 import image_utils
+import numpy as np
+from stl.mesh import Mesh
 
 
 def litophane_from_image(
@@ -115,7 +115,7 @@ def litophane_from_stereo(
     # extract the current image size
     height, width = img_left.shape
 
-    left_points, right_points = match_keypoints(img_left, img_right)
+    left_points, right_points, _ = match_keypoints(img_left, img_right)
 
     disparity = calculate_disparity(
         left_points, right_points, img_left, img_right)
@@ -181,7 +181,9 @@ def match_keypoints(
     matcher: cv2.BFMatcher = cv2.BFMatcher_create(normType=cv2.NORM_HAMMING,
                                                   crossCheck=True
                                                   )
-    matches: Tuple[cv2.DMatch] = matcher.match(des_left, des_right)
+
+    matches: Union[Tuple[cv2.DMatch], List[cv2.DMatch]]
+    matches = matcher.match(des_left, des_right)
 
     # Only use the best matches
     matches = sorted(matches, key=lambda x: x.distance)[:30]
@@ -205,6 +207,14 @@ def match_keypoints(
     return left_points, right_points, img_with_matches
 
 
+def find_fundamental_matrix(left_points: np.ndarray, right_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    return cv2.findFundamentalMat(
+        left_points,
+        right_points,
+        cv2.FM_RANSAC
+    )  # type: ignore
+
+
 def calculate_disparity(
     left_points: np.ndarray,
     right_points: np.ndarray,
@@ -225,10 +235,10 @@ def calculate_disparity(
     # We need to find our Fundamental Matrix
     fundamental: np.ndarray
     inliers: np.ndarray
-    fundamental, inliers = cv2.findFundamentalMat(left_points,
-                                                  right_points,
-                                                  cv2.FM_RANSAC
-                                                  )
+    fundamental, inliers = find_fundamental_matrix(
+        left_points,
+        right_points
+    )
 
     # keep only the
     left_points = left_points[inliers.ravel() == 1]

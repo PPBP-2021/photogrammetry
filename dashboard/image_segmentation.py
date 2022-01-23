@@ -1,62 +1,36 @@
 import os
-
-import dash
-from dash import html
-from dash import dcc
-
-import plotly.express as px
-
-import dash_bootstrap_components as dbc
-
-from dashboard.layout import image_picker
-from dashboard.layout import navbar
-from dashboard.instance import app
-
-
-from imageprocessing import segmentate_grayscale
+from typing import List
 
 import cv2
+import dash
+import plotly.express as px
+from dash import dcc, html
+from imageprocessing import segmentate_grayscale
 
-
-def create_graph_card_horizontal(titles, graphs):
-    content = []
-
-    for title, graph in zip(titles, graphs):
-        content.append(
-            dbc.Card(
-                [
-                    dbc.CardHeader(title),
-                    dbc.CardBody(
-                        dcc.Graph(
-                            figure=graph,
-                            config={"displayModeBar": False}
-                        )
-                    )
-                ], class_name="w-30 mb-3"
-            ),
-        )
-
-    return dbc.Container(content)
-
+import dashboard.layout_utils.assets as assets
+import dashboard.layout_utils.graphs as graphs
+from dashboard.instance import app
+from dashboard.layout import image_picker, navbar
 
 layout = [
     image_picker.layout,
     navbar.layout,
-    html.Div([
-    ]
-    , id="graphs-out")
+    dcc.Loading(
+        html.Div([
+        ], id="graphs-out")
+    )
 ]
 
 
 @app.callback(dash.Output("graphs-out", "children"),
-              [dash.Input(image_id[0].stem, "n_clicks") for image_id in image_picker.get_asset_images()])
+              [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()])
 def select_image(*image_path):
 
-    image_path = dash.callback_context.triggered[0]["prop_id"].replace(
-        ".n_clicks", "")
+    ctx = dash.callback_context
+    image_path = ctx.triggered[0]["prop_id"].replace(".n_clicks", "")
 
     file_path = ""
-    for image in image_picker.get_asset_images():
+    for image in assets.get_asset_images():
         if image_path in str(image[0]):
             file_path = str(image[0])
             break
@@ -93,4 +67,4 @@ def select_image(*image_path):
         )
     ]
 
-    return create_graph_card_horizontal(titles, figures)
+    return graphs.create_graph_card_vertical(titles, figures)

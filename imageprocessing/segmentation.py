@@ -1,8 +1,8 @@
-from typing import Union
-import cv2
-import numpy as np
+from typing import Union, cast
 
+import cv2
 import image_utils as imgutils
+import numpy as np
 
 
 def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explain: bool = False) -> np.ndarray:
@@ -26,6 +26,9 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
 
     if isinstance(image, str):
         image = cv2.imread(image)
+
+    # typing only, no real reason to do it
+    image = cast(np.ndarray, image)
 
     # Step 1: Try to reduce shadows
     # start by splitting image into HSV channels
@@ -81,6 +84,5 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
 
     image = cv2.bitwise_and(image, image, mask=largest_cntr)
     x, y, w, h = bounding_rect
-    image = image[y:y+h, x:x+w]
 
-    return image
+    return image[y:y+h, x:x+w]  # type: ignore

@@ -1,70 +1,48 @@
-from curses import window
-import os
-
-import dash
-from dash import html
-from dash import dcc
-from matplotlib.pyplot import figure, title
-
-import plotly.express as px
-
-import dash_bootstrap_components as dbc
-
-from dashboard.layout import image_picker
-from dashboard.layout import navbar
-from dashboard.layout import stereo_properties
-from dashboard.instance import app
-
-import modelbuilder.litophane
+import pathlib
+from typing import List, Optional, Tuple, cast
 
 import cv2
+import dash
+import modelbuilder.litophane
+import numpy as np
+import plotly.express as px
+from dash import dcc, html
 
+import dashboard.layout_utils.assets as assets
+import dashboard.layout_utils.graphs as graphs
+from dashboard.instance import app
+from dashboard.layout import image_picker, navbar, stereo_properties
 
-PROPERTIES = ["minDisparity", "numDisparities", "window_size", "disp12MaxDiff",
-              "uniquenessRatio", "speckleWindowSize", "speckleRange", "preFilterCap"]
+# all different PROPERTIES that are used to calc the Disparity
+PROPERTIES: List[str] = ["minDisparity", "numDisparities", "window_size", "disp12MaxDiff",
+                         "uniquenessRatio", "speckleWindowSize", "speckleRange", "preFilterCap"]
 
-current_left_image = None
-current_right_image = None
-property_values = [0,5*16,5,12,10,50,32,63]
+IMG_LEFT: Optional[np.ndarray] = None  # left image of the stereo pair
+IMG_RIGHT: Optional[np.ndarray] = None  # right image of the stereo pai
 
-
-def create_graph_card_horizontal(titles, graphs):
-    content = []
-
-    for title, graph in zip(titles, graphs):
-        content.append(
-            dbc.Card(
-                [
-                    dbc.CardHeader(title),
-                    dbc.CardBody(
-                        dcc.Graph(
-                            figure=graph,
-                            config={"displayModeBar": False}
-                        )
-                    )
-                ], class_name="w-30 mb-3"
-            ),
-        )
-
-    return dbc.Container(content)
+# list of all PROPERTIES values used to call the Disparity calc function
+PROPERTY_VALS: List[int] = [0, 5*16, 5, 12, 10, 50, 32, 63]
 
 
 def calculate_current_disparity():
     left_points, right_points, _ = modelbuilder.litophane.match_keypoints(
-        current_left_image, current_right_image)
+        IMG_LEFT, IMG_RIGHT  # type: ignore
+    )
 
-    disparity = modelbuilder.litophane.calculate_disparity(left_points, right_points,
-                                                           current_left_image, current_right_image, *property_values)
+    disparity = modelbuilder.litophane.calculate_disparity(
+        left_points,
+        right_points,
+        IMG_LEFT,  # type: ignore
+        IMG_RIGHT,  # type: ignore
+        *PROPERTY_VALS
+    )
 
     titles = ["Disparity Map"]
-    figures = [px.imshow(disparity, color_continuous_scale="gray").update_layout(
-        margin=dict(
-            b=0,  # bottom margin 40px
-            l=0,  # left margin 40px
-            r=0,  # right margin 20px
-            t=0,  # top margin 20px
+    figures = [
+        px.imshow(disparity, color_continuous_scale="gray").update_layout(
+            margin=dict(b=0, l=0, r=0, t=0)
         )
-    )]
+    ]
 
     return titles, figures
 
@@ -73,52 +51,73 @@ layout = [
     image_picker.layout,
     stereo_properties.layout,
     navbar.layout,
-    html.Div([
+    dcc.Loading(
+        html.Div([
 
-    ], id="graphs-out-stereo")
+        ], id="graphs-out-stereo")
+    )
 ]
 
 
-@app.callback(dash.Output("graphs-out-stereo", "children"),
-              [dash.Input(image_id[0].stem, "n_clicks")
-               for image_id in image_picker.get_asset_images()] + [dash.Input(prop, "value")
-               for prop in PROPERTIES],
-              )
+@app.callback(
+    dash.Output("graphs-out-stereo", "children"),
+    [
+        dash.Input(image_id[0].stem, "n_clicks")
+        for image_id in assets.get_asset_images()
+    ]
+    +
+    [
+        dash.Input(prop, "value") for prop in PROPERTIES
+    ]
+)
 def select_image(*inputs):
+    global IMG_LEFT
+    global IMG_RIGHT
+    global PROPERTY_VALS
 
-    asset_images = image_picker.get_asset_images()
-    global current_left_image
-    global current_right_image
-    global property_values
-    property_values = inputs[len(asset_images):]
+    asset_images = assets.get_asset_images()
+    # update all our property values
+    PROPERTY_VALS = cast(
+        List[int], inputs[len(asset_images):])  # typing related
 
-    prop_id = dash.callback_context.triggered[0]["prop_id"]
-    try_replace_n_clicks = prop_id.replace(
-        ".n_clicks", "")
-    
-    print(prop_id)
+    ctx = dash.callback_context
+    prop_id = ctx.triggered[0]["prop_id"]
 
-    if prop_id == try_replace_n_clicks and current_left_image is None:
-        print("case1")
+    # Only image button has .n_clicks property.
+    # Thus if its still the same as before, it was only a value change
+    is_value_slider = prop_id.replace(".n_clicks", "") == prop_id
+
+    # no current image selected, but input values changed. -> Do nothing
+    if is_value_slider and IMG_LEFT is None:
         return
-    elif prop_id != try_replace_n_clicks:
-        print("case2")
-        image_path = dash.callback_context.triggered[0]["prop_id"].replace(
-            ".n_clicks", "")
 
-        file_path = ""
-        for image in asset_images:
-            if image_path in str(image[0]):
-                file_path_left = str(image[0])
-                file_path_right = str(image[1])
-                break
-
-        current_left_image = cv2.cvtColor(
-            cv2.imread(file_path_left), cv2.COLOR_BGR2GRAY)
-        current_right_image = cv2.cvtColor(
-            cv2.imread(file_path_right), cv2.COLOR_BGR2GRAY)
+    # The input that triggered this callback was the change of an image
+    elif not is_value_slider:
+        # inside the buttons id we stored its asset path, thus remove nclicks
+        image_path = prop_id.replace(".n_clicks", "")
+        _update_selected_images(image_path, asset_images)
 
     titles, figures = calculate_current_disparity()
 
-    return create_graph_card_horizontal(titles, figures)
+    return graphs.create_graph_card_vertical(titles, figures)
 
+
+def _update_selected_images(image_path: str, assets: List[Tuple[pathlib.Path, pathlib.Path, dict]]):
+    """Update the current selected stereo image pairs from the given input.
+
+    Parameters
+    ----------
+    image_path : str
+        The selected image path
+    assets : List[Tuple[pathlib.Path, pathlib.Path, dict]]
+        All possible image pair path Triples to choose from.
+    """
+    global IMG_LEFT
+    global IMG_RIGHT
+    for image in assets:
+        if image_path in str(image[0]):
+            IMG_LEFT = cv2.cvtColor(
+                cv2.imread(str(image[0])), cv2.COLOR_BGR2GRAY)
+            IMG_RIGHT = cv2.cvtColor(
+                cv2.imread(str(image[1])), cv2.COLOR_BGR2GRAY)
+            break
