@@ -14,7 +14,7 @@ PROPERTY_STYLE = {
     "top": 0,
     "right": 0,
     "bottom": 0,
-    "width": "18%",
+    "width": "25%",
     "padding": "4rem 1rem 2rem",
     "background-color": "#f8f9fa",
 }
@@ -28,21 +28,21 @@ layout = html.Div(
         dbc.Container(
             [
             html.P("minDisparities", className="lead"),
-            dcc.Input(name="minDisparity",id="minDisparity",type="number",value=0),
+            dcc.Slider(id="minDisparity",min=0,step=1,max=500,value=0,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("numDisparities", className="lead"),
-            dcc.Input(name="numDisparities",id="numDisparities",type="number",value=5*16),
+            dcc.Slider(id="numDisparities",min=1,step=16,max=10*16,value=5*16,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("window_size", className="lead"),
-            dcc.Input(name="window_size",id="window_size",type="number",value=5),
+            dcc.Slider(id="window_size",min=1,step=2,max=31,value=5,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("disp12MaxDiff", className="lead"),
-            dcc.Input(name="disp12MaxDiff",id="disp12MaxDiff",type="number",value=12),
+            dcc.Slider(id="disp12MaxDiff",min=-1,step=1,max=100,value=12,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("uniquenessRatio", className="lead"),
-            dcc.Input(name="uniquenessRatio",id="uniquenessRatio",type="number",value=10),
+            dcc.Slider(id="uniquenessRatio",min=1,step=1,max=100,value=10,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("speckleWindowSize", className="lead"),
-            dcc.Input(name="speckleWindowSize",id="speckleWindowSize",type="number",value=50),
+            dcc.Slider(id="speckleWindowSize",min=0,step=50,max=200,value=50,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("speckleRange", className="lead"),
-            dcc.Input(name="speckleRange",id="speckleRange",type="number",value=32),
+            dcc.Slider(id="speckleRange",min=-1,step=1,max=5,value=5,tooltip={"placement": "bottom", "always_visible": True}),
             html.P("preFilterCap", className="lead"),
-            dcc.Input(name="preFilterCap",id="preFilterCap",type="number",value=63),
+            dcc.Slider(id="preFilterCap",min=0,step=1,max=126,value=63,tooltip={"placement": "bottom", "always_visible": True}),
             ]
         ),
 
