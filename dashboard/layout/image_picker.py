@@ -27,7 +27,7 @@ SIDEBAR_STYLE = {
     "top": 0,
     "left": 0,
     "bottom": 0,
-    "width": "15%",
+    "width": "25%",
     "padding": "4rem 1rem 2rem",
     "background-color": "#f8f9fa",
     "overflow-y": "scroll"

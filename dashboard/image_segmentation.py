@@ -12,26 +12,18 @@ import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
 from dashboard.layout import image_picker, navbar
 
-CONTENT_STYLE = {
-    "position": "fixed",
-    "top": 58,
-    "left": 250,
-    "bottom": 0,
-    "width": "80%",
-    "padding": "4rem 1rem 2rem",
-    "background-color": "#f8f9fa",
-    "overflow-y": "scroll",
-}
 
 layout = [
-    image_picker.layout,
-    navbar.layout,
-    dcc.Loading(
-        html.Div([
-        ], id="graphs-out",
-        style=CONTENT_STYLE)
+    image_picker.layout,  # the image picker on the very left side
+    navbar.layout,  # navigation on top of the website
+    html.Div(
+        dcc.Loading(
+            html.Div([
+            ], id="graphs-out")
+        ), style={"margin": "0 auto", "width": "50%", "textAlign": "start"}  # centered and 50% of width
     )
 ]
+
 
 @app.callback(dash.Output("graphs-out", "children"),
               [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()])
