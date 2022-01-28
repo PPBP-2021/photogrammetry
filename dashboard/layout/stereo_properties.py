@@ -4,11 +4,12 @@ from dash import dcc, html
 PROPERTY_STYLE = {
     "position": "fixed",
     "top": 0,
-    "right": 0,
     "bottom": 0,
+    "right": 0,
     "width": "25%",
     "padding": "4rem 1rem 2rem",
     "background-color": "#f8f9fa",
+    "overflow-y": "scroll"
 }
 
 

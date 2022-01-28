@@ -46,6 +46,15 @@ def calculate_current_disparity():
 
     return titles, figures
 
+CONTENT_STYLE = {
+    "position": "fixed",
+    "top": 58,
+    "left": 250,
+    "bottom": 0,
+    "width": "55%",
+    "padding": "4rem 1rem 2rem",
+    "background-color": "#f8f9fa",
+}
 
 layout = [
     image_picker.layout,
@@ -54,7 +63,8 @@ layout = [
     dcc.Loading(
         html.Div([
 
-        ], id="graphs-out-stereo")
+        ], id="graphs-out-stereo",
+        style=CONTENT_STYLE)
     )
 ]
 
