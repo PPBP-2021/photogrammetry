@@ -103,7 +103,14 @@ layout = [
 ]
 
 
-def select_scaling(function):
+def _select_scaling(function):
+    """returns the mathematical function for a given function name
+
+    Parameters
+    ----------
+    function : str
+        The name of the mathematical function
+    """
     if function == "log":
         return lambda z: np.log(z)
     elif function == "quadratic":
@@ -112,7 +119,18 @@ def select_scaling(function):
         return lambda z: z
 
 
-def update_grayscale(treshold, asset_images=None, image_path=None):
+def _update_grayscale(treshold, asset_images=None, image_path=None):
+    """Update the current grayscale image with new treshold or optionally new image
+
+    Parameters
+    ----------
+    treshold : float
+        The treshold used for segmentate_grayscale
+    image_path : Optional[str]
+        The selected image path, if not given takes previously selected image
+    assets : Optional[List[Tuple[pathlib.Path, pathlib.Path, dict]]]
+        All possible image pair path Triples to choose from.
+    """
     global CURRENT_SEG
     global CURRENT_PATH
 
@@ -137,6 +155,7 @@ def update_grayscale(treshold, asset_images=None, image_path=None):
     +
     [
         dash.Input("gray_treshold", "value"),
+        dash.Input("resolution", "value"),
         dash.Input("z_scale", "value")
     ]
 )
@@ -146,7 +165,8 @@ def select_image(*inputs):
     asset_images = assets.get_asset_images()
 
     # update all our property values
-    current_treshold = inputs[-2]
+    current_treshold = inputs[-3]
+    current_resolution = inputs[-2]
     z_scale = inputs[-1]
 
     ctx = dash.callback_context
@@ -164,18 +184,18 @@ def select_image(*inputs):
     elif not is_property:
         # inside the buttons id we stored its asset path, thus remove nclicks
         image_path = prop_id.replace(".n_clicks", "")
-        update_grayscale(current_treshold, asset_images, image_path)
+        _update_grayscale(current_treshold, asset_images, image_path)
 
     # The input that triggered this callback was a property change
     else:
         prop = prop_id.replace(".value", "")
         # The input property was the threshold for our grayscale
         if prop == "gray_treshold":
-            update_grayscale(current_treshold)
+            _update_grayscale(current_treshold)
 
     seg_fig = _create_segmentation_fig(CURRENT_SEG)
     lito_mesh = litophane_from_image(
-        CURRENT_SEG, z_scale=select_scaling(z_scale))
+        CURRENT_SEG, resolution=current_resolution, z_scale=_select_scaling(z_scale))
     lito_fig = convert_stl_mesh_to_figure(lito_mesh)
     titles, figures = ["Segmentated", "3D Litophane"], [seg_fig, lito_fig]
 
