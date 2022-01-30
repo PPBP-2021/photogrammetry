@@ -30,7 +30,7 @@ def create_graph_card_vertical(titles: List[str], graphs: List[go.Figure]) -> db
                     dbc.CardBody(
                         dcc.Graph(
                             figure=graph,
-                            config={"displayModeBar": False}
+                            # config={"displayModeBar": False}
                         )
                     )
                 ], class_name="w-30 mb-3"

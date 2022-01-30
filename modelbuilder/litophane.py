@@ -3,14 +3,14 @@ from typing import Callable, Tuple, Union, List
 import cv2
 import image_utils
 import numpy as np
-from stl.mesh import Mesh
+import open3d
 
 
 def litophane_from_image(
     seg_img: np.ndarray,
     resolution: float = 1.0,
     z_scale: Callable[[float], float] = lambda z: z
-) -> Mesh:
+) -> open3d.geometry.TriangleMesh:
     """Construct a 3D litophane of a segmentated image.
 
     Parameters
@@ -32,34 +32,31 @@ def litophane_from_image(
 
     height, width, _ = seg_img.shape
 
-    vertices = []
-    faces = []
+    mesh = open3d.geometry.TriangleMesh()
 
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
     Z = np.array([z_scale(pixel[2]/255) for pixel in seg_img.reshape((-1, 3))])
 
     vertices = np.column_stack((X, Y, Z))
-    vertices = vertices.reshape((height, width, 3))
+    mesh.vertices = open3d.utility.Vector3dVector(vertices)
 
+    tris = []
     for i in range(height-1):
         for j in range(width-1):
-            top_left = vertices[i][j]
-            top_right = vertices[i][j+1]
-            bottom_right = vertices[i+1][j+1]
-            bottom_left = vertices[i+1][j]
 
-            if top_left[2] == 0 or bottom_right[2] == 0:
-                continue
+            index = i*width + j
 
-            if bottom_left[2] != 0:
-                faces.append([top_left, bottom_left, bottom_right])
-            if top_right[2] != 0:
-                faces.append([top_left, top_right, bottom_right])
+            tris.append(
+                [index, index+1, index+width]
+            )
 
-    faces = np.array(faces)
-    mesh = Mesh(np.zeros(faces.shape[0], dtype=Mesh.dtype))
-    mesh.vectors = faces
+            tris.append(
+                [index+width, index+1, index+width+1]
+            )
+
+    tris = np.array(tris).astype(int).reshape((-1, 3))
+    mesh.triangles = open3d.utility.Vector3iVector(tris)
 
     return mesh
 
@@ -73,7 +70,7 @@ def litophane_from_stereo(
     resolution: float = 1.0,
     z_scale: Callable[[float], float] = lambda z: z,
     match_features: bool = False
-) -> Mesh:
+) -> open3d.geometry.TriangleMesh:
     """Create a 3d model from 2 images using stereo depth estimation.
 
     Parameters

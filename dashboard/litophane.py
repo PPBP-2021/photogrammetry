@@ -3,9 +3,12 @@ from typing import List
 
 import cv2
 import dash
+import numpy as np
+import open3d
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc, html
+from image_utils import triangle_mesh_to_fig
 from imageprocessing import segmentate_grayscale
 from modelbuilder import litophane_from_image
 
@@ -41,38 +44,16 @@ def select_image(*image_path):
 
     titles = ["3d Litophane", ]
 
-    segmentated = segmentate_grayscale(
-        file_path, 240)  # ToDo 240 to slider value?
+    segmentated = segmentate_grayscale(file_path,
+                                       240)  # ToDo 240 to slider value?
 
-    lito = litophane_from_image(
+    lito: open3d.geometry.TriangleMesh = litophane_from_image(
         segmentated,
-        resolution=1.0,
+        resolution=0.1,
         z_scale=lambda z: z
     )
 
-    vertices = lito.vectors[:, :]
-    x, y, z = vertices
-
-    mesh3D = go.Mesh3d(x=x,
-                       y=y,
-                       z=z,
-                       flatshading=True,
-                       # colorscale=colorscale,
-                       intensity=z,
-                       # name=title,
-                       showscale=False)
-
-    layout = go.Layout(paper_bgcolor='rgb(1,1,1)',
-                       # title_text=title, title_x=0.5,
-                       font_color='white',
-                       scene_camera=dict(eye=dict(x=1.25, y=-1.25, z=1)),
-                       scene_xaxis_visible=False,
-                       scene_yaxis_visible=False,
-                       scene_zaxis_visible=False,
-                       scene=dict(
-                           aspectmode='data'
-                       ))
-    fig = go.Figure(data=[mesh3D], layout=layout)
+    fig = triangle_mesh_to_fig(lito)
 
     figures = [fig]
 
