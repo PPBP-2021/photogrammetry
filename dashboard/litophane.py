@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, Tuple, cast, Callable, Any
 
 import cv2
 import dash
@@ -55,20 +55,22 @@ layout = [
 ]
 
 
-def _select_scaling(function):
-    """returns the mathematical function for a given function name
+def _select_scaling(radio_choice: str) -> Callable[[float], float]:
+    """Get the corresponding math function for the given string.
 
     Parameters
     ----------
-    function : str
-        The name of the mathematical function
+    radio_choice : str
+        The selected radio button in the web ui.
+
+    Returns
+    -------
+    Callable[float, float]
+        The function to be used as z scale for the mesh.
     """
-    if function == "log":
-        return lambda z: np.log(z)
-    elif function == "quadratic":
-        return lambda z: np.square(z)
-    elif function == "no":
-        return lambda z: z
+    return {"log": np.log,
+            "quadratic": np.square,
+            }.get(radio_choice, lambda z: z)
 
 
 def _update_grayscale(treshold, asset_images=None, image_path=None):
@@ -111,15 +113,15 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
         dash.Input("z_scale", "value")
     ]
 )
-def select_image(*inputs):
+def select_image(*inputs: List[Any]):
     global CURRENT_SEG
 
     asset_images = assets.get_asset_images()
 
     # update all our property values
-    current_treshold = inputs[-3]
-    current_resolution = inputs[-2]
-    z_scale = inputs[-1]
+    gray_treshold = inputs[-3]
+    resolution_scale = inputs[-2]
+    radio_z_scale_choice = inputs[-1]
 
     ctx = dash.callback_context
     prop_id = ctx.triggered[0]["prop_id"]
@@ -136,18 +138,18 @@ def select_image(*inputs):
     elif not is_property:
         # inside the buttons id we stored its asset path, thus remove nclicks
         image_path = prop_id.replace(".n_clicks", "")
-        _update_grayscale(current_treshold, asset_images, image_path)
+        _update_grayscale(gray_treshold, asset_images, image_path)
 
     # The input that triggered this callback was a property change
     else:
         prop = prop_id.replace(".value", "")
         # The input property was the threshold for our grayscale
         if prop == "gray_treshold":
-            _update_grayscale(current_treshold)
+            _update_grayscale(gray_treshold)
 
     seg_fig = _create_segmentation_fig(CURRENT_SEG)
     lito_mesh = litophane_from_image(
-        CURRENT_SEG, resolution=current_resolution, z_scale=_select_scaling(z_scale))
+        CURRENT_SEG, resolution=resolution_scale, z_scale=_select_scaling(radio_z_scale_choice))
     lito_fig = triangle_mesh_to_fig(lito_mesh)
     titles, figures = ["Segmentated", "3D Litophane"], [seg_fig, lito_fig]
 

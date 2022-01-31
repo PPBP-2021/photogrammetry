@@ -14,18 +14,13 @@ app.layout = html.Div([
 
 @app.callback(dash.Output("page-content", "children"),
               [dash.Input("url", "pathname")])
-def display_page(pathname):
-    if pathname.lower() in ("/", "/home"):
-        return home.layout
+def display_page(pathname: str):
+    pathname = pathname.lower()
 
-    elif pathname == "/segmentation":
-        return image_segmentation.layout
-
-    elif pathname == "/litophane":
-        return litophane.layout
-
-    elif pathname == "/litophane_from_stereo":
-        return litophane_from_stereo.layout
-
-    else:
-        return "404"
+    return {
+        "/": home.layout,
+        "/home": home.layout,
+        "/segmentation": image_segmentation.layout,
+        "/litophane": litophane.layout,
+        "/litophane_from_stereo": litophane_from_stereo.layout
+    }.get(pathname, "404")

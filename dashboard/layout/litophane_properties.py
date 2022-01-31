@@ -21,7 +21,7 @@ layout = html.Div(
             [
                 html.P(
                     html.Abbr(
-                        "grayscale treshold", title="Grayscaled pixels with a higher value than this will be turned completely black."
+                        "Grayscale treshold", title="Grayscaled pixels with a higher value than this will be turned completely black."
                     ), className="lead"
                 ),
                 dcc.Slider(id="gray_treshold", min=50, step=1, max=255, value=240, tooltip={
@@ -29,7 +29,7 @@ layout = html.Div(
 
                 html.P(
                     html.Abbr(
-                        "resolution", title="Adjust resolution for the litophane creation to save computation time"
+                        "Resolution", title="Adjust resolution for the litophane creation to save computation time"
                     ), className="lead"
                 ),
                 dcc.Slider(id="resolution", min=0.1, step=0.1, max=1, value=0.5, tooltip={
@@ -37,15 +37,15 @@ layout = html.Div(
 
                 html.P(
                     html.Abbr(
-                        "3D z-scale", title="Chose mehtod to scale the depth values (z) of the litophane"
+                        "3D z-scale", title="Choose the method to scale the depth values (z) of the litophane"
                     ), className="lead"
                 ),
                 dcc.RadioItems(
                     id="z_scale",
                     options=[
-                        {"label": "no scale", "value": "no"},
-                        {"label": "log", "value": "log"},
-                        {"label": "quadratic", "value": "quadratic"}
+                        {"label": "No Scale", "value": "no"},
+                        {"label": "log Scale", "value": "log"},
+                        {"label": "Quadratic Scale", "value": "quadratic"}
                     ],
                     value="no",
                     labelStyle={"display": "block"}
