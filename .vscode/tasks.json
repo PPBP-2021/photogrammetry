@@ -4,8 +4,8 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "test.py",
-            "command": "${config:python.pythonPath} test.py",
+            "label": "app.py",
+            "command": "${config:python.pythonPath} app.py",
             "type": "shell",
             "group": {
                 "kind": "build",
