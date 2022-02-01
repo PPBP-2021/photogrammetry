@@ -1,20 +1,25 @@
-from typing import List, Optional, Tuple, cast, Callable, Any
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Tuple
 
 import cv2
 import dash
 import numpy as np
-import open3d
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html
-from image_utils import triangle_mesh_to_fig
-from imageprocessing import segmentate_grayscale
-from modelbuilder import litophane_from_image
+from dash import dcc
+from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
-from dashboard.layout import image_picker, litophane_properties, navbar
+from dashboard.layout import image_picker
+from dashboard.layout import litophane_properties
+from dashboard.layout import navbar
+from image_utils import triangle_mesh_to_fig
+from imageprocessing import segmentate_grayscale
+from modelbuilder import litophane_from_image
 
 CURRENT_SEG = None
 CURRENT_PATH = None
@@ -113,15 +118,14 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
         dash.Input("z_scale", "value")
     ]
 )
-def select_image(*inputs: List[Any]):
+def select_image(*inputs: Tuple[Any]):
     global CURRENT_SEG
-
     asset_images = assets.get_asset_images()
 
     # update all our property values
-    gray_treshold = inputs[-3]
-    resolution_scale = inputs[-2]
-    radio_z_scale_choice = inputs[-1]
+    gray_treshold: float = cast(float, inputs[-3])
+    resolution_scale: float = cast(float, inputs[-2])
+    radio_z_scale_choice: str = cast(str, inputs[-1])
 
     ctx = dash.callback_context
     prop_id = ctx.triggered[0]["prop_id"]

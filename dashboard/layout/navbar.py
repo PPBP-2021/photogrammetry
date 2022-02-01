@@ -1,9 +1,7 @@
 import dash
-from dash import html
-from dash import dcc
-
-
 import dash_bootstrap_components as dbc
+from dash import dcc
+from dash import html
 
 
 layout = dbc.NavbarSimple(

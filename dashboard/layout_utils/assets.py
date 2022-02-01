@@ -1,6 +1,6 @@
-from pathlib import Path
 import functools
 import json
+from pathlib import Path
 
 
 @functools.lru_cache()

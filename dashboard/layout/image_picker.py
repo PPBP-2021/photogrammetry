@@ -1,8 +1,9 @@
 import functools
 
 import dash_bootstrap_components as dbc
-import dashboard.layout_utils.assets as assets
 from dash import html
+
+import dashboard.layout_utils.assets as assets
 
 
 @functools.lru_cache()

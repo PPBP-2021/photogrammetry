@@ -1,17 +1,23 @@
 import pathlib
-from typing import List, Optional, Tuple, cast
+from typing import cast
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import cv2
 import dash
-import modelbuilder.litophane
 import numpy as np
 import plotly.express as px
-from dash import dcc, html
+from dash import dcc
+from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
+import modelbuilder.litophane
 from dashboard.instance import app
-from dashboard.layout import image_picker, navbar, stereo_properties
+from dashboard.layout import image_picker
+from dashboard.layout import navbar
+from dashboard.layout import stereo_properties
 
 # all different PROPERTIES that are used to calc the Disparity
 PROPERTIES: List[str] = ["minDisparity", "numDisparities", "window_size", "disp12MaxDiff",

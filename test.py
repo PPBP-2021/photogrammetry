@@ -1,9 +1,10 @@
-import imageprocessing as imgp
-import image_utils as imgutils
-import modelbuilder as mb
+import math
+
 import cv2
 
-import math
+import image_utils as imgutils
+import imageprocessing as imgp
+import modelbuilder as mb
 
 
 stereo_left_img = cv2.imread("testimages/monke_L.png")

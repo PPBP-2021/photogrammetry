@@ -1,9 +1,12 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html
+from dash import dcc
+from dash import html
 
-from dashboard import (home, image_segmentation, litophane,
-                       litophane_from_stereo)
+from dashboard import home
+from dashboard import image_segmentation
+from dashboard import litophane
+from dashboard import litophane_from_stereo
 from dashboard.instance import app
 
 app.layout = html.Div([

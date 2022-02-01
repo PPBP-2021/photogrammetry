@@ -1,8 +1,10 @@
-from typing import Union, cast
+from typing import cast
+from typing import Union
 
 import cv2
-import image_utils as imgutils
 import numpy as np
+
+import image_utils as imgutils
 
 
 def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explain: bool = False) -> np.ndarray:

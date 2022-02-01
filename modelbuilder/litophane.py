@@ -1,9 +1,13 @@
-from typing import Callable, Tuple, Union, List
+from typing import Callable
+from typing import List
+from typing import Tuple
+from typing import Union
 
 import cv2
-import image_utils
 import numpy as np
 import open3d
+
+import image_utils
 
 
 def litophane_from_image(
@@ -120,7 +124,7 @@ def litophane_from_stereo(
     image_utils.show_img_grayscale(disparity, "Disparity map")
 
     return
-
+    """
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
 
@@ -155,6 +159,7 @@ def litophane_from_stereo(
     mesh.vectors = faces
 
     return mesh
+    """
 
 
 def match_keypoints(

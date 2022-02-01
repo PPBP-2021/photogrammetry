@@ -4,13 +4,15 @@ from typing import List
 import cv2
 import dash
 import plotly.express as px
-from dash import dcc, html
-from imageprocessing import segmentate_grayscale
+from dash import dcc
+from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
-from dashboard.layout import image_picker, navbar
+from dashboard.layout import image_picker
+from dashboard.layout import navbar
+from imageprocessing import segmentate_grayscale
 
 
 layout = [
