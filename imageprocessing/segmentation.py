@@ -1,11 +1,15 @@
+from typing import cast
 from typing import Union
+
 import cv2
 import numpy as np
 
 import image_utils as imgutils
 
 
-def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explain: bool = False) -> np.ndarray:
+def segmentate_grayscale(
+    image: Union[np.ndarray, str], threshold: float, explain: bool = False
+) -> np.ndarray:
     """Segmentates the given image by the given threshold.
 
     Every pixel that has a higher grayscale value than the given threshold
@@ -26,6 +30,9 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
 
     if isinstance(image, str):
         image = cv2.imread(image)
+
+    # typing only, no real reason to do it
+    image = cast(np.ndarray, image)
 
     # Step 1: Try to reduce shadows
     # start by splitting image into HSV channels
@@ -51,8 +58,9 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
     kernel = np.ones((3, 3), np.uint8)
     blurred_img = cv2.morphologyEx(blurred_img, cv2.MORPH_OPEN, kernel)
     denoised = cv2.morphologyEx(blurred_img, cv2.MORPH_CLOSE, kernel)
-    mask = cv2.threshold(denoised, thresh=threshold,
-                         maxval=255, type=cv2.THRESH_BINARY_INV)[1]
+    mask = cv2.threshold(
+        denoised, thresh=threshold, maxval=255, type=cv2.THRESH_BINARY_INV
+    )[1]
     if explain:
         imgutils.show_img(mask, title="Mask")
 
@@ -63,16 +71,17 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
-    largest_cntr_indx = max(enumerate(contours),
-                            key=lambda x: cv2.contourArea(x[1]))[0]
+    largest_cntr_indx = max(enumerate(contours), key=lambda x: cv2.contourArea(x[1]))[0]
     bounding_rect = cv2.boundingRect(contours[largest_cntr_indx])
 
-    largest_cntr = cv2.drawContours(image=largest_cntr,
-                                    contours=contours,
-                                    contourIdx=largest_cntr_indx,
-                                    color=255,
-                                    thickness=cv2.FILLED,
-                                    hierarchy=hierarchy)
+    largest_cntr = cv2.drawContours(
+        image=largest_cntr,
+        contours=contours,
+        contourIdx=largest_cntr_indx,
+        color=255,
+        thickness=cv2.FILLED,
+        hierarchy=hierarchy,
+    )
 
     largest_cntr = cv2.cvtColor(largest_cntr, cv2.COLOR_BGR2GRAY)
 
@@ -80,7 +89,6 @@ def segmentate_grayscale(image: Union[np.ndarray, str], threshold: float, explai
         imgutils.show_img(largest_cntr, title="Largest Contour")
 
     image = cv2.bitwise_and(image, image, mask=largest_cntr)
-    x,y,w,h = bounding_rect
-    image = image[y:y+h,x:x+w]
+    x, y, w, h = bounding_rect
 
-    return image
+    return image[y : y + h, x : x + w]  # type: ignore

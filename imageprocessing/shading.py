@@ -1,5 +1,3 @@
-
-
 def grayscale_shading():
     """Genrete a grayscale Image from given seperated forground Image.
 
@@ -10,6 +8,5 @@ def grayscale_shading():
 
 
 def light_source_from_image():
-    """Try to find light vectors from given image.
-    """
+    """Try to find light vectors from given image."""
     pass
