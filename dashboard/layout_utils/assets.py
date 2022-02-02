@@ -20,9 +20,11 @@ def get_asset_images():
         with open(config) as f:
             config = json.load(f)
             returns.append(
-                (asset_path/config["left_image"],
-                 asset_path/config["right_image"],
-                 config)
+                (
+                    asset_path / config["left_image"],
+                    asset_path / config["right_image"],
+                    config,
+                )
             )
 
     return returns

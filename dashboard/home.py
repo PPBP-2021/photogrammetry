@@ -4,7 +4,8 @@ from dashboard.layout import navbar
 
 layout = [
     navbar.layout,
-    dcc.Markdown("""
+    dcc.Markdown(
+        """
 # Photogrammetry Beginners Practical WS 2021/22
 -----------------------------------------------
 ```py
@@ -14,11 +15,16 @@ print("Welcome to our Project Page")
 
 ## What is Photogrammetry?
 
-Photogrammetry is the process of creating 3D objects from 2D photographs. The process can be used to scan anything from objects and people, to architecture, terrain and landscapes. There are various strategies you can use when taking photos to produce accurate models. This document includes photography techniques, ideal camera settings and lighting, photogrammetry software, and further resources to create 3D models from photos.
+Photogrammetry is the process of creating 3D objects from 2D photographs. The process can be used to scan
+ anything from objects and people, to architecture, terrain and landscapes. There are various strategies
+ you can use when taking photos to produce accurate models. This document includes photography
+ techniques, ideal camera settings and lighting, photogrammetry software, and further resources to
+ create 3D models from photos.
 
 ### Definition
 
-  **Photogrammetry** *[noun]* The science or technique for obtaining reliable information on the natural environment or physical objects by recording, measuring and interpreting photographic images.
+  **Photogrammetry** *[noun]* The science or technique for obtaining reliable information on the
+   natural environment or physical objects by recording, measuring and interpreting photographic images.
 
   Greek:
 
@@ -41,4 +47,8 @@ Remote Sensing, GIS, Stereoscopy
   - To measure something too large to measure with traditional methods, i.e., landscape, a megalithic structure
   - Quantitative data from photographs, the science of measuring in photos.
 
-""", highlight_config={"theme": "dark"}, style={"margin": "0 auto", "width": "50%", "textAlign": "start"})]
+""",
+        highlight_config={"theme": "dark"},
+        style={"margin": "0 auto", "width": "50%", "textAlign": "start"},
+    ),
+]

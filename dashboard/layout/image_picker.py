@@ -16,7 +16,11 @@ def get_image_cards():
                     dbc.CardImg(
                         src=str(image[0]).replace("dashboard", "."),
                         top=True,
-                    ), id=image[0].stem, style={"padding": "0"}, color="secondary")
+                    ),
+                    id=image[0].stem,
+                    style={"padding": "0"},
+                    color="secondary",
+                )
             ]
         )
         cards.append(card)
@@ -31,20 +35,16 @@ SIDEBAR_STYLE = {
     "width": "25%",
     "padding": "4rem 1rem 2rem",
     "background-color": "#f8f9fa",
-    "overflow-y": "scroll"
+    "overflow-y": "scroll",
 }
 
 
 layout = html.Div(
     [
-
         html.H2("Select Image", className="display-4"),
         html.Hr(),
-        html.P(
-            "Select any image", className="lead"
-        ),
-        dbc.Container(
-            get_image_cards()
-        ),
-    ], style=SIDEBAR_STYLE
+        html.P("Select any image", className="lead"),
+        dbc.Container(get_image_cards()),
+    ],
+    style=SIDEBAR_STYLE,
 )

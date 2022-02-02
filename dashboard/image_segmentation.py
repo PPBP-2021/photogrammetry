@@ -19,16 +19,23 @@ layout = [
     image_picker.layout,  # the image picker on the very left side
     navbar.layout,  # navigation on top of the website
     html.Div(
-        dcc.Loading(
-            html.Div([
-            ], id="graphs-out")
-        ), style={"margin": "0 auto", "width": "50%", "textAlign": "start"}  # centered and 50% of width
-    )
+        dcc.Loading(html.Div([], id="graphs-out")),
+        style={
+            "margin": "0 auto",
+            "width": "50%",
+            "textAlign": "start",
+        },  # centered and 50% of width
+    ),
 ]
 
 
-@app.callback(dash.Output("graphs-out", "children"),
-              [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()])
+@app.callback(
+    dash.Output("graphs-out", "children"),
+    [
+        dash.Input(image_id[0].stem, "n_clicks")
+        for image_id in assets.get_asset_images()
+    ],
+)
 def select_image(*image_path):
 
     ctx = dash.callback_context
@@ -51,14 +58,10 @@ def select_image(*image_path):
                 l=0,  # left margin 40px
                 r=0,  # right margin 20px
                 t=0,  # top margin 20px
-            )
+            ),
         ),
-
         px.imshow(
-            cv2.cvtColor(
-                segmentate_grayscale(file_path, 240),
-                cv2.COLOR_BGR2RGB
-            )
+            cv2.cvtColor(segmentate_grayscale(file_path, 240), cv2.COLOR_BGR2RGB)
         ).update_layout(
             template="plotly_white",
             plot_bgcolor="rgba(0, 0, 0, 0)",
@@ -68,8 +71,8 @@ def select_image(*image_path):
                 l=0,  # left margin 40px
                 r=0,  # right margin 20px
                 t=0,  # top margin 20px
-            )
-        )
+            ),
+        ),
     ]
 
     return graphs.create_graph_card_vertical(titles, figures)

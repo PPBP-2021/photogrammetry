@@ -27,12 +27,7 @@ CURRENT_PATH = None
 
 def _create_segmentation_fig(seg_img):
 
-    seg_fig = px.imshow(
-        cv2.cvtColor(
-            seg_img,
-            cv2.COLOR_BGR2RGB
-        )
-    ).update_layout(
+    seg_fig = px.imshow(cv2.cvtColor(seg_img, cv2.COLOR_BGR2RGB)).update_layout(
         template="plotly_white",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
@@ -41,7 +36,7 @@ def _create_segmentation_fig(seg_img):
             l=0,  # left margin 40px
             r=0,  # right margin 20px
             t=0,  # top margin 20px
-        )
+        ),
     )
 
     return seg_fig
@@ -52,11 +47,13 @@ layout = [
     litophane_properties.layout,  # properties on the very right side
     navbar.layout,  # navigation on top of the website
     html.Div(
-        dcc.Loading(
-            html.Div([
-            ], id="graphs-out-lito")
-        ), style={"margin": "0 auto", "width": "50%", "textAlign": "start"}  # centered and 50% of width
-    )
+        dcc.Loading(html.Div([], id="graphs-out-lito")),
+        style={
+            "margin": "0 auto",
+            "width": "50%",
+            "textAlign": "start",
+        },  # centered and 50% of width
+    ),
 ]
 
 
@@ -73,9 +70,10 @@ def _select_scaling(radio_choice: str) -> Callable[[float], float]:
     Callable[float, float]
         The function to be used as z scale for the mesh.
     """
-    return {"log": np.log,
-            "quadratic": np.square,
-            }.get(radio_choice, lambda z: z)
+    return {
+        "log": np.log,
+        "quadratic": np.square,
+    }.get(radio_choice, lambda z: z)
 
 
 def _update_grayscale(treshold, asset_images=None, image_path=None):
@@ -107,16 +105,12 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
 
 @app.callback(
     dash.Output("graphs-out-lito", "children"),
-    [
-        dash.Input(image_id[0].stem, "n_clicks")
-        for image_id in assets.get_asset_images()
-    ]
-    +
-    [
+    [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()]
+    + [
         dash.Input("gray_treshold", "value"),
         dash.Input("resolution", "value"),
-        dash.Input("z_scale", "value")
-    ]
+        dash.Input("z_scale", "value"),
+    ],
 )
 def select_image(*inputs: Tuple[Any]):
     global CURRENT_SEG
@@ -153,7 +147,10 @@ def select_image(*inputs: Tuple[Any]):
 
     seg_fig = _create_segmentation_fig(CURRENT_SEG)
     lito_mesh = litophane_from_image(
-        CURRENT_SEG, resolution=resolution_scale, z_scale=_select_scaling(radio_z_scale_choice))
+        CURRENT_SEG,
+        resolution=resolution_scale,
+        z_scale=_select_scaling(radio_z_scale_choice),
+    )
     lito_fig = triangle_mesh_to_fig(lito_mesh)
     titles, figures = ["Segmentated", "3D Litophane"], [seg_fig, lito_fig]
 

@@ -10,7 +10,7 @@ PROPERTY_STYLE = {
     "width": "25%",
     "padding": "4rem 1rem 2rem",
     "background-color": "#f8f9fa",
-    "overflow-y": "scroll"
+    "overflow-y": "scroll",
 }
 
 
@@ -22,37 +22,53 @@ layout = html.Div(
             [
                 html.P(
                     html.Abbr(
-                        "Grayscale treshold", title="Grayscaled pixels with a higher value than this will be turned completely black."
-                    ), className="lead"
+                        "Grayscale treshold",
+                        title="Grayscaled pixels with a higher value than this will be turned completely black.",
+                    ),
+                    className="lead",
                 ),
-                dcc.Slider(id="gray_treshold", min=50, step=1, max=255, value=240, tooltip={
-                           "placement": "bottom", "always_visible": True}),
-
+                dcc.Slider(
+                    id="gray_treshold",
+                    min=50,
+                    step=1,
+                    max=255,
+                    value=240,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                ),
                 html.P(
                     html.Abbr(
-                        "Resolution", title="Adjust resolution for the litophane creation to save computation time"
-                    ), className="lead"
+                        "Resolution",
+                        title="Adjust resolution for the litophane creation to save computation time",
+                    ),
+                    className="lead",
                 ),
-                dcc.Slider(id="resolution", min=0.1, step=0.1, max=1, value=0.5, tooltip={
-                           "placement": "bottom", "always_visible": True}),
-
+                dcc.Slider(
+                    id="resolution",
+                    min=0.1,
+                    step=0.1,
+                    max=1,
+                    value=0.5,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                ),
                 html.P(
                     html.Abbr(
-                        "3D z-scale", title="Choose the method to scale the depth values (z) of the litophane"
-                    ), className="lead"
+                        "3D z-scale",
+                        title="Choose the method to scale the depth values (z) of the litophane",
+                    ),
+                    className="lead",
                 ),
                 dcc.RadioItems(
                     id="z_scale",
                     options=[
                         {"label": "No Scale", "value": "no"},
                         {"label": "log Scale", "value": "log"},
-                        {"label": "Quadratic Scale", "value": "quadratic"}
+                        {"label": "Quadratic Scale", "value": "quadratic"},
                     ],
                     value="no",
-                    labelStyle={"display": "block"}
-                )
+                    labelStyle={"display": "block"},
+                ),
             ]
         ),
-
-    ], style=PROPERTY_STYLE
+    ],
+    style=PROPERTY_STYLE,
 )

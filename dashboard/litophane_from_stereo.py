@@ -20,14 +20,22 @@ from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 
 # all different PROPERTIES that are used to calc the Disparity
-PROPERTIES: List[str] = ["minDisparity", "numDisparities", "window_size", "disp12MaxDiff",
-                         "uniquenessRatio", "speckleWindowSize", "speckleRange", "preFilterCap"]
+PROPERTIES: List[str] = [
+    "minDisparity",
+    "numDisparities",
+    "window_size",
+    "disp12MaxDiff",
+    "uniquenessRatio",
+    "speckleWindowSize",
+    "speckleRange",
+    "preFilterCap",
+]
 
 IMG_LEFT: Optional[np.ndarray] = None  # left image of the stereo pair
 IMG_RIGHT: Optional[np.ndarray] = None  # right image of the stereo pai
 
 # list of all PROPERTIES values used to call the Disparity calc function
-PROPERTY_VALS: List[int] = [0, 5*16, 5, 12, 10, 50, 5, 63]
+PROPERTY_VALS: List[int] = [0, 5 * 16, 5, 12, 10, 50, 5, 63]
 
 
 def calculate_current_disparity():
@@ -58,24 +66,16 @@ layout = [
     stereo_properties.layout,
     navbar.layout,
     html.Div(
-        dcc.Loading(
-            html.Div([
-            ], id="graphs-out-stereo")
-        ), style={"margin": "0 auto", "width": "50%", "textAlign": "start"}
-    )
+        dcc.Loading(html.Div([], id="graphs-out-stereo")),
+        style={"margin": "0 auto", "width": "50%", "textAlign": "start"},
+    ),
 ]
 
 
 @app.callback(
     dash.Output("graphs-out-stereo", "children"),
-    [
-        dash.Input(image_id[0].stem, "n_clicks")
-        for image_id in assets.get_asset_images()
-    ]
-    +
-    [
-        dash.Input(prop, "value") for prop in PROPERTIES
-    ]
+    [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()]
+    + [dash.Input(prop, "value") for prop in PROPERTIES],
 )
 def select_image(*inputs):
     global IMG_LEFT
@@ -84,8 +84,7 @@ def select_image(*inputs):
 
     asset_images = assets.get_asset_images()
     # update all our property values
-    PROPERTY_VALS = cast(
-        List[int], inputs[len(asset_images):])  # typing related
+    PROPERTY_VALS = cast(List[int], inputs[len(asset_images) :])  # typing related
 
     ctx = dash.callback_context
     prop_id = ctx.triggered[0]["prop_id"]
@@ -109,7 +108,9 @@ def select_image(*inputs):
     return graphs.create_graph_card_vertical(titles, figures)
 
 
-def _update_selected_images(image_path: str, assets: List[Tuple[pathlib.Path, pathlib.Path, dict]]):
+def _update_selected_images(
+    image_path: str, assets: List[Tuple[pathlib.Path, pathlib.Path, dict]]
+):
     """Update the current selected stereo image pairs from the given input.
 
     Parameters
@@ -123,8 +124,6 @@ def _update_selected_images(image_path: str, assets: List[Tuple[pathlib.Path, pa
     global IMG_RIGHT
     for image in assets:
         if image_path in str(image[0]):
-            IMG_LEFT = cv2.cvtColor(
-                cv2.imread(str(image[0])), cv2.COLOR_BGR2GRAY)
-            IMG_RIGHT = cv2.cvtColor(
-                cv2.imread(str(image[1])), cv2.COLOR_BGR2GRAY)
+            IMG_LEFT = cv2.cvtColor(cv2.imread(str(image[0])), cv2.COLOR_BGR2GRAY)
+            IMG_RIGHT = cv2.cvtColor(cv2.imread(str(image[1])), cv2.COLOR_BGR2GRAY)
             break

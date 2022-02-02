@@ -1,5 +1,4 @@
 import dash
-import dash_bootstrap_components as dbc
 from dash import dcc
 from dash import html
 
@@ -9,14 +8,12 @@ from dashboard import litophane
 from dashboard import litophane_from_stereo
 from dashboard.instance import app
 
-app.layout = html.Div([
-    dcc.Location(id="url", refresh=False),
-    html.Div(id="page-content")
-])
+app.layout = html.Div(
+    [dcc.Location(id="url", refresh=False), html.Div(id="page-content")]
+)
 
 
-@app.callback(dash.Output("page-content", "children"),
-              [dash.Input("url", "pathname")])
+@app.callback(dash.Output("page-content", "children"), [dash.Input("url", "pathname")])
 def display_page(pathname: str):
     pathname = pathname.lower()
 
@@ -25,5 +22,5 @@ def display_page(pathname: str):
         "/home": home.layout,
         "/segmentation": image_segmentation.layout,
         "/litophane": litophane.layout,
-        "/litophane_from_stereo": litophane_from_stereo.layout
+        "/litophane_from_stereo": litophane_from_stereo.layout,
     }.get(pathname, "404")

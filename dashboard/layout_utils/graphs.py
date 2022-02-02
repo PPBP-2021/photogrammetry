@@ -5,7 +5,9 @@ import plotly.graph_objs as go
 from dash import dcc
 
 
-def create_graph_card_vertical(titles: List[str], graphs: List[go.Figure]) -> dbc.Container:
+def create_graph_card_vertical(
+    titles: List[str], graphs: List[go.Figure]
+) -> dbc.Container:
     """Create a List of graphs in Cards, places vertically.
 
     Parameters
@@ -32,8 +34,9 @@ def create_graph_card_vertical(titles: List[str], graphs: List[go.Figure]) -> db
                             figure=graph,
                             # config={"displayModeBar": False}
                         )
-                    )
-                ], class_name="w-30 mb-3"
+                    ),
+                ],
+                class_name="w-30 mb-3",
             ),
         )
 

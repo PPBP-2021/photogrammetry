@@ -13,7 +13,7 @@ import image_utils
 def litophane_from_image(
     seg_img: np.ndarray,
     resolution: float = 1.0,
-    z_scale: Callable[[float], float] = lambda z: z
+    z_scale: Callable[[float], float] = lambda z: z,
 ) -> open3d.geometry.TriangleMesh:
     """Construct a 3D litophane of a segmentated image.
 
@@ -38,26 +38,22 @@ def litophane_from_image(
 
     mesh = open3d.geometry.TriangleMesh()
 
-    X = np.array([i/height for i in range(width)]*height)
-    Y = np.array([(height-i//width)/height for i in range(height*width)])
-    Z = np.array([z_scale(pixel[2]/255) for pixel in seg_img.reshape((-1, 3))])
+    X = np.array([i / height for i in range(width)] * height)
+    Y = np.array([(height - i // width) / height for i in range(height * width)])
+    Z = np.array([z_scale(pixel[2] / 255) for pixel in seg_img.reshape((-1, 3))])
 
     vertices = np.column_stack((X, Y, Z))
     mesh.vertices = open3d.utility.Vector3dVector(vertices)
 
     tris = []
-    for i in range(height-1):
-        for j in range(width-1):
+    for i in range(height - 1):
+        for j in range(width - 1):
 
-            index = i*width + j
+            index = i * width + j
 
-            tris.append(
-                [index, index+1, index+width]
-            )
+            tris.append([index, index + 1, index + width])
 
-            tris.append(
-                [index+width, index+1, index+width+1]
-            )
+            tris.append([index + width, index + 1, index + width + 1])
 
     tris = np.array(tris).astype(int).reshape((-1, 3))
     mesh.triangles = open3d.utility.Vector3iVector(tris)
@@ -73,7 +69,7 @@ def litophane_from_stereo(
     fov: float,
     resolution: float = 1.0,
     z_scale: Callable[[float], float] = lambda z: z,
-    match_features: bool = False
+    match_features: bool = False,
 ) -> open3d.geometry.TriangleMesh:
     """Create a 3d model from 2 images using stereo depth estimation.
 
@@ -102,7 +98,7 @@ def litophane_from_stereo(
     Returns
     -------
     Mesh
-        The Mesh using the calculated depth information from both images.    
+        The Mesh using the calculated depth information from both images.
     """
 
     # start with optional resize of the images
@@ -118,8 +114,7 @@ def litophane_from_stereo(
 
     left_points, right_points, _ = match_keypoints(img_left, img_right)
 
-    disparity = calculate_disparity(
-        left_points, right_points, img_left, img_right)
+    disparity = calculate_disparity(left_points, right_points, img_left, img_right)
 
     image_utils.show_img_grayscale(disparity, "Disparity map")
 
@@ -163,13 +158,12 @@ def litophane_from_stereo(
 
 
 def match_keypoints(
-    img_left: np.ndarray,
-    img_right: np.ndarray
+    img_left: np.ndarray, img_right: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     height, width = img_left.shape
 
     # get the important keypoints and descriptors for both images
-    orb: cv2.ORB = cv2.ORB_create(nfeatures=int(np.sqrt(height*width)))
+    orb: cv2.ORB = cv2.ORB_create(nfeatures=int(np.sqrt(height * width)))
 
     kp_left: Tuple[cv2.KeyPoint]
     des_left: np.ndarray
@@ -180,9 +174,9 @@ def match_keypoints(
     kp_right, des_right = orb.detectAndCompute(img_right, None)
 
     # Match the descriptors between both images
-    matcher: cv2.BFMatcher = cv2.BFMatcher_create(normType=cv2.NORM_HAMMING,
-                                                  crossCheck=True
-                                                  )
+    matcher: cv2.BFMatcher = cv2.BFMatcher_create(
+        normType=cv2.NORM_HAMMING, crossCheck=True
+    )
 
     matches: Union[Tuple[cv2.DMatch], List[cv2.DMatch]]
     matches = matcher.match(des_left, des_right)
@@ -191,29 +185,28 @@ def match_keypoints(
     matches = sorted(matches, key=lambda x: x.distance)[:30]
 
     # Show the best matches between both images
-    img_with_matches: np.ndarray = cv2.drawMatches(img_left,
-                                                   kp_left,
-                                                   img_right,
-                                                   kp_right,
-                                                   matches,
-                                                   None,
-                                                   flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
-                                                   )
+    img_with_matches: np.ndarray = cv2.drawMatches(
+        img_left,
+        kp_left,
+        img_right,
+        kp_right,
+        matches,
+        None,
+        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+    )
 
     # Extract the x, y coordinates of the match
-    left_points = np.array(
-        [kp_left[m.queryIdx].pt for m in matches], dtype=int)
-    right_points = np.array(
-        [kp_right[m.trainIdx].pt for m in matches], dtype=int)
+    left_points = np.array([kp_left[m.queryIdx].pt for m in matches], dtype=int)
+    right_points = np.array([kp_right[m.trainIdx].pt for m in matches], dtype=int)
 
     return left_points, right_points, img_with_matches
 
 
-def find_fundamental_matrix(left_points: np.ndarray, right_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def find_fundamental_matrix(
+    left_points: np.ndarray, right_points: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     return cv2.findFundamentalMat(
-        left_points,
-        right_points,
-        cv2.FM_RANSAC
+        left_points, right_points, cv2.FM_RANSAC
     )  # type: ignore
 
 
@@ -222,9 +215,8 @@ def calculate_disparity(
     right_points: np.ndarray,
     img_left: np.ndarray,
     img_right: np.ndarray,
-
     minDisparity=0,
-    numDisparities=5*16,
+    numDisparities=5 * 16,
     window_size=5,
     disp12MaxDiff=12,
     uniquenessRatio=10,
@@ -237,10 +229,7 @@ def calculate_disparity(
     # We need to find our Fundamental Matrix
     fundamental: np.ndarray
     inliers: np.ndarray
-    fundamental, inliers = find_fundamental_matrix(
-        left_points,
-        right_points
-    )
+    fundamental, inliers = find_fundamental_matrix(left_points, right_points)
 
     # keep only the
     left_points = left_points[inliers.ravel() == 1]
@@ -249,11 +238,9 @@ def calculate_disparity(
     # get the homography matrices for each image
     h_left: np.ndarray
     h_right: np.ndarray
-    _, h_left, h_right = cv2.stereoRectifyUncalibrated(left_points,
-                                                       right_points,
-                                                       fundamental,
-                                                       (width, height)
-                                                       )
+    _, h_left, h_right = cv2.stereoRectifyUncalibrated(
+        left_points, right_points, fundamental, (width, height)
+    )
 
     left_rectified = cv2.warpPerspective(img_left, h_left, (width, height))
     right_rectified = cv2.warpPerspective(img_right, h_right, (width, height))
@@ -263,19 +250,20 @@ def calculate_disparity(
         minDisparity=minDisparity,
         numDisparities=numDisparities,
         blockSize=window_size,
-        P1=8 * 3 * window_size**2,
-        P2=32 * 3 * window_size**2,
+        P1=8 * 3 * window_size ** 2,
+        P2=32 * 3 * window_size ** 2,
         disp12MaxDiff=disp12MaxDiff,
         uniquenessRatio=uniquenessRatio,
         speckleWindowSize=speckleWindowSize,
         speckleRange=speckleRange,
         preFilterCap=preFilterCap,
-        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
+        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
     )
 
     # disparity has to be divided by the bit size
     # https://stackoverflow.com/questions/28959440/how-to-access-the-disparity-value-in-opencv
-    disparity = stereo.compute(left_rectified,
-                               right_rectified).astype(np.float32) / 16.0
+    disparity = (
+        stereo.compute(left_rectified, right_rectified).astype(np.float32) / 16.0
+    )
 
     return disparity
