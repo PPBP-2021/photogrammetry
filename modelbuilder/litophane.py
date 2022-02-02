@@ -61,102 +61,6 @@ def litophane_from_image(
     return mesh
 
 
-def litophane_from_stereo(
-    img_left: np.ndarray,
-    img_right: np.ndarray,
-    baseline: float,
-    focal_length: float,
-    fov: float,
-    resolution: float = 1.0,
-    z_scale: Callable[[float], float] = lambda z: z,
-    match_features: bool = False,
-) -> open3d.geometry.TriangleMesh:
-    """Create a 3d model from 2 images using stereo depth estimation.
-
-    Parameters
-    ----------
-    img_left : np.ndarray
-        The Left image data in BGR format.
-    img_right : np.ndarray
-        The Right image data in BGR format.
-    baseline : float
-        Distance between both cameras in mm.
-    focal_length : float
-        Focal Lenght of the camera in mm.
-    sensor width : float
-
-    fov : float
-        Horizontal FOV of the camera.
-    resolution : float, optional
-        Changes the images resolution before calculating the depth, increses performance if lower than 1.0, by default 1.0
-    z_scale : Callable[[float], float], optional
-        Scale the calculated depth value using this function, by default lambdaz:z
-    match_features : bool, optional
-        Uses opencvs feature matching algorithm if true, else calculate disparity by hand assuming ideal image alignment.
-
-
-    Returns
-    -------
-    Mesh
-        The Mesh using the calculated depth information from both images.
-    """
-
-    # start with optional resize of the images
-    img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
-    img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
-
-    # grayscale
-    img_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
-    img_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
-
-    left_points, right_points, _ = match_keypoints(img_left, img_right)
-
-    disparity = calculate_disparity(left_points, right_points, img_left, img_right)
-
-    image_utils.show_img_grayscale(disparity, "Disparity map")
-
-    mesh = calculate_stereo_litophane_mesh(disparity, baseline, fov, z_scale)
-
-    return
-
-    """
-    X = np.array([i/height for i in range(width)]*height)
-    Y = np.array([(height-i//width)/height for i in range(height*width)])
-
-    # calculate the focal length in pixels
-    focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi/180)
-    focal_length = 0.8 * width
-    Z = z_scale(((baseline * focal_length) / disparity).reshape(height*width))
-
-    vertices = []
-    faces = []
-
-    vertices = np.column_stack((X, Y, Z))
-    vertices = vertices.reshape((height, width, 3))
-
-    for i in range(height-1):
-        for j in range(width-1):
-            top_left = vertices[i][j]
-            top_right = vertices[i][j+1]
-            bottom_right = vertices[i+1][j+1]
-            bottom_left = vertices[i+1][j]
-
-            if top_left[2] == 0 or bottom_right[2] == 0:
-                continue
-
-            if bottom_left[2] != 0:
-                faces.append([top_left, bottom_left, bottom_right])
-            if top_right[2] != 0:
-                faces.append([top_left, top_right, bottom_right])
-
-    faces = np.array(faces)
-    mesh = Mesh(np.zeros(faces.shape[0], dtype=Mesh.dtype))
-    mesh.vectors = faces
-
-    return mesh
-    """
-
-
 def match_keypoints(
     img_left: np.ndarray, img_right: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -281,7 +185,7 @@ def calculate_stereo_litophane_mesh(
     baseline: float,
     fov: float,
     z_scale: Callable[[float], float] = lambda z: z,
-):
+) -> open3d.geometry.TriangleMesh:
     # extract the current image size
     height, width = disparity.shape
 
@@ -292,9 +196,12 @@ def calculate_stereo_litophane_mesh(
 
     # calculate the focal length in pixels
     focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi / 180)
-    focal_length = 0.8 * width
-    disparity += 1e-99
+
+    disparity = disparity.astype(float)
+    disparity[disparity == 0] = np.inf
+
     Z = z_scale(((baseline * focal_length) / disparity).reshape(height * width))
+    Z = -Z  # invert the z axis
 
     vertices = np.column_stack((X, Y, Z))
     mesh.vertices = open3d.utility.Vector3dVector(vertices)
