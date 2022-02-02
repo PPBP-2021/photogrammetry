@@ -4,7 +4,6 @@ import open3d
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.graph_objs as go
-import stl
 
 
 def show_img_grayscale(image: np.ndarray, title="") -> None:
@@ -18,7 +17,7 @@ def show_img(image: np.ndarray, title: str = "") -> None:
     px.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), title=title).show()
 
 
-def show_stl(mesh: stl.mesh.Mesh, title: str = "") -> None:
+def show_stl(mesh: open3d.geometry.TriangleMesh, title: str = "") -> None:
     def stl2mesh3d(stl_mesh):
         # stl_mesh is read by nympy-stl from a stl file; it is  an array of faces/triangles (i.e. three 3d points)
         # this function extracts the unique vertices and the lists I, J, K to define a Plotly mesh3d
