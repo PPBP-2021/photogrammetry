@@ -163,43 +163,50 @@ def match_keypoints(
     height, width = img_left.shape
 
     # get the important keypoints and descriptors for both images
-    orb: cv2.ORB = cv2.ORB_create(nfeatures=int(np.sqrt(height * width)))
-
+    sift = cv2.SIFT_create()
     kp_left: Tuple[cv2.KeyPoint]
     des_left: np.ndarray
-    kp_left, des_left = orb.detectAndCompute(img_left, None)
+    kp_left, des_left = sift.detectAndCompute(img_left, None)
 
     kp_right: Tuple[cv2.KeyPoint]
     des_right: np.ndarray
-    kp_right, des_right = orb.detectAndCompute(img_right, None)
+    kp_right, des_right = sift.detectAndCompute(img_right, None)
 
     # Match the descriptors between both images
-    matcher: cv2.BFMatcher = cv2.BFMatcher_create(
-        normType=cv2.NORM_HAMMING, crossCheck=True
-    )
+    FLANN_INDEX_KDTREE = 1
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+    matcher = cv2.FlannBasedMatcher(index_params, search_params)
 
     matches: Union[Tuple[cv2.DMatch], List[cv2.DMatch]]
-    matches = matcher.match(des_left, des_right)
+    matches = matcher.knnMatch(des_left, des_right, k=2)
 
     # Only use the best matches
-    matches = sorted(matches, key=lambda x: x.distance)[:30]
+    # based on https://docs.opencv.org/4.x/dc/dc3/tutorial_py_matcher.html
+    # Lowes Paper: https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf
+    matches_mask = [[0, 0] for i in range(len(matches))]
+    pts1 = []
+    pts2 = []
+    for i, (m, n) in enumerate(matches):
+        if m.distance < 0.7 * n.distance:
+            # Keep this keypoint pair
+            matches_mask[i] = [1, 0]
+            pts2.append(kp_right[m.trainIdx].pt)
+            pts1.append(kp_left[m.queryIdx].pt)
 
-    # Show the best matches between both images
-    img_with_matches: np.ndarray = cv2.drawMatches(
-        img_left,
-        kp_left,
-        img_right,
-        kp_right,
-        matches,
-        None,
-        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+    draw_params = dict(
+        matchColor=(0, 255, 0),
+        singlePointColor=(255, 0, 0),
+        matchesMask=matches_mask,
+        flags=cv2.DrawMatchesFlags_DEFAULT,
     )
 
-    # Extract the x, y coordinates of the match
-    left_points = np.array([kp_left[m.queryIdx].pt for m in matches], dtype=int)
-    right_points = np.array([kp_right[m.trainIdx].pt for m in matches], dtype=int)
+    # Show the best matches between both images
+    img_with_matches = cv2.drawMatchesKnn(
+        img_left, kp_left, img_right, kp_right, matches, None, **draw_params
+    )
 
-    return left_points, right_points, img_with_matches
+    return np.array(pts1, dtype=int), np.array(pts2, dtype=int), img_with_matches
 
 
 def find_fundamental_matrix(
@@ -215,14 +222,13 @@ def calculate_disparity(
     right_points: np.ndarray,
     img_left: np.ndarray,
     img_right: np.ndarray,
-    minDisparity=0,
+    minDisparity=-1,
     numDisparities=5 * 16,
     window_size=5,
     disp12MaxDiff=12,
     uniquenessRatio=10,
     speckleWindowSize=50,
     speckleRange=32,
-    preFilterCap=63,
 ) -> np.ndarray:
     height, width = img_left.shape
 
@@ -239,7 +245,7 @@ def calculate_disparity(
     h_left: np.ndarray
     h_right: np.ndarray
     _, h_left, h_right = cv2.stereoRectifyUncalibrated(
-        left_points, right_points, fundamental, (width, height)
+        left_points, right_points, fundamental, imgSize=(width, height)
     )
 
     left_rectified = cv2.warpPerspective(img_left, h_left, (width, height))
@@ -250,21 +256,22 @@ def calculate_disparity(
         minDisparity=minDisparity,
         numDisparities=numDisparities,
         blockSize=window_size,
-        P1=8 * 3 * window_size ** 2,
-        P2=32 * 3 * window_size ** 2,
+        P1=8 * 1 * window_size ** 2,
+        P2=32 * 1 * window_size ** 2,
         disp12MaxDiff=disp12MaxDiff,
         uniquenessRatio=uniquenessRatio,
         speckleWindowSize=speckleWindowSize,
         speckleRange=speckleRange,
-        preFilterCap=preFilterCap,
         mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
     )
 
-    # disparity has to be divided by the bit size
-    # https://stackoverflow.com/questions/28959440/how-to-access-the-disparity-value-in-opencv
-    disparity = (
-        stereo.compute(left_rectified, right_rectified).astype(np.float32) / 16.0
+    disparity = stereo.compute(left_rectified, right_rectified)
+
+    # Normalize the values to a range from 0..255 for a grayscale image
+    disparity = cv2.normalize(
+        disparity, disparity, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
     )
+    disparity = np.uint8(disparity)
 
     return disparity
 
