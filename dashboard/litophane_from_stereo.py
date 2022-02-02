@@ -18,6 +18,7 @@ from dashboard.instance import app
 from dashboard.layout import image_picker
 from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
+from image_utils import triangle_mesh_to_fig
 
 # all different PROPERTIES that are used to calc the Disparity
 PROPERTIES: List[str] = [
@@ -38,11 +39,36 @@ IMG_RIGHT: Optional[np.ndarray] = None  # right image of the stereo pai
 PROPERTY_VALS: List[int] = [0, 5 * 16, 5, 12, 10, 50, 5, 63]
 
 
-def calculate_current_disparity():
+def calculate_stereo_litophane(
+    image_path: str, asset_images: List[Tuple[pathlib.Path, pathlib.Path, dict]]
+):
+    """Calculate the current stereo_litophane to be shown on the website togheter with its disparity map
+
+    Parameters
+    ----------
+    image_path : str
+        The selected image path
+    asset_images : List[Tuple[pathlib.Path, pathlib.Path, dict]]
+        All possible image pair path Triples to choose from.
+
+    Returns
+    -------
+    Tuple[List[str], List[go.Figure]]
+        The Figures to be shown on the website with their according titles
+    """
+
+    # extract image information
+    for image in asset_images:
+        if image_path in str(image[0]):
+            baseline = float(image[2]["baseline"])
+            fov = float(image[2]["fov"])
+
+    # feature matching
     left_points, right_points, _ = modelbuilder.litophane.match_keypoints(
         IMG_LEFT, IMG_RIGHT  # type: ignore
     )
 
+    # calculate disparity map
     disparity = modelbuilder.litophane.calculate_disparity(
         left_points,
         right_points,
@@ -51,11 +77,19 @@ def calculate_current_disparity():
         *PROPERTY_VALS
     )
 
-    titles = ["Disparity Map"]
+    # calculate the stereo_litophane
+    lito_mesh = modelbuilder.litophane.calculate_stereo_litophane_mesh(
+        disparity, baseline, fov
+    )
+    lito_fig = triangle_mesh_to_fig(lito_mesh)
+
+    # create figures to show on website
+    titles = ["Disparity Map", "Stereo Litophane"]
     figures = [
         px.imshow(disparity, color_continuous_scale="gray").update_layout(
             margin=dict(b=0, l=0, r=0, t=0)
-        )
+        ),
+        lito_fig,
     ]
 
     return titles, figures
@@ -103,7 +137,7 @@ def select_image(*inputs):
         image_path = prop_id.replace(".n_clicks", "")
         _update_selected_images(image_path, asset_images)
 
-    titles, figures = calculate_current_disparity()
+    titles, figures = calculate_stereo_litophane(image_path, asset_images)
 
     return graphs.create_graph_card_vertical(titles, figures)
 

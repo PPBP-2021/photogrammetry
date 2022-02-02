@@ -109,16 +109,16 @@ def litophane_from_stereo(
     img_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
     img_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
 
-    # extract the current image size
-    height, width = img_left.shape
-
     left_points, right_points, _ = match_keypoints(img_left, img_right)
 
     disparity = calculate_disparity(left_points, right_points, img_left, img_right)
 
     image_utils.show_img_grayscale(disparity, "Disparity map")
 
+    mesh = calculate_stereo_litophane_mesh(disparity, baseline, fov, z_scale)
+
     return
+
     """
     X = np.array([i/height for i in range(width)]*height)
     Y = np.array([(height-i//width)/height for i in range(height*width)])
@@ -267,3 +267,41 @@ def calculate_disparity(
     )
 
     return disparity
+
+
+def calculate_stereo_litophane_mesh(
+    disparity: np.ndarray,
+    baseline: float,
+    fov: float,
+    z_scale: Callable[[float], float] = lambda z: z,
+):
+    # extract the current image size
+    height, width = disparity.shape
+
+    mesh = open3d.geometry.TriangleMesh()
+
+    X = np.array([i / height for i in range(width)] * height)
+    Y = np.array([(height - i // width) / height for i in range(height * width)])
+
+    # calculate the focal length in pixels
+    focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi / 180)
+    focal_length = 0.8 * width
+    Z = z_scale(((baseline * focal_length) / disparity).reshape(height * width))
+
+    vertices = np.column_stack((X, Y, Z))
+    mesh.vertices = open3d.utility.Vector3dVector(vertices)
+
+    tris = []
+    for i in range(height - 1):
+        for j in range(width - 1):
+
+            index = i * width + j
+
+            tris.append([index, index + 1, index + width])
+
+            tris.append([index + width, index + 1, index + width + 1])
+
+    tris = np.array(tris).astype(int).reshape((-1, 3))
+    mesh.triangles = open3d.utility.Vector3iVector(tris)
+
+    return mesh
