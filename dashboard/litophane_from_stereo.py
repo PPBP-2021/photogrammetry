@@ -28,14 +28,13 @@ PROPERTIES: List[str] = [
     "uniquenessRatio",
     "speckleWindowSize",
     "speckleRange",
-    "preFilterCap",
 ]
 
 IMG_LEFT: Optional[np.ndarray] = None  # left image of the stereo pair
 IMG_RIGHT: Optional[np.ndarray] = None  # right image of the stereo pai
 
 # list of all PROPERTIES values used to call the Disparity calc function
-PROPERTY_VALS: List[int] = [0, 5 * 16, 5, 12, 10, 50, 5, 63]
+PROPERTY_VALS: List[int] = []  # [0, 5 * 16, 5, 12, 10, 50, 5]
 
 
 def calculate_current_disparity():
