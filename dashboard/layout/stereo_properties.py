@@ -140,6 +140,38 @@ layout = html.Div(
                     value=63,
                     tooltip={"placement": "bottom", "always_visible": True},
                 ),
+                html.P(
+                    html.Abbr(
+                        "Resolution",
+                        title="Adjust resolution of image to save computation time",
+                    ),
+                    className="lead",
+                ),
+                dcc.Slider(
+                    id="resolution_stereo",
+                    min=0.1,
+                    step=0.1,
+                    max=1,
+                    value=0.5,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                ),
+                html.P(
+                    html.Abbr(
+                        "3D z-scale",
+                        title="Choose the method to scale the depth values (z) of the litophane",
+                    ),
+                    className="lead",
+                ),
+                dcc.RadioItems(
+                    id="z_scale_stereo",
+                    options=[
+                        {"label": "No Scale", "value": "no"},
+                        {"label": "log Scale", "value": "log"},
+                        {"label": "Quadratic Scale", "value": "quadratic"},
+                    ],
+                    value="no",
+                    labelStyle={"display": "block"},
+                ),
             ]
         ),
     ],

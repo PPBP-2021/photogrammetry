@@ -286,6 +286,7 @@ def calculate_stereo_litophane_mesh(
     # calculate the focal length in pixels
     focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi / 180)
     focal_length = 0.8 * width
+    disparity += 1e-99
     Z = z_scale(((baseline * focal_length) / disparity).reshape(height * width))
 
     vertices = np.column_stack((X, Y, Z))
