@@ -8,6 +8,7 @@ from typing import Tuple
 import cv2
 import dash
 import numpy as np
+import pandas as pd
 import plotly.express as px
 from dash import dcc
 from dash import html
@@ -106,10 +107,25 @@ def calculate_stereo_litophane(
     )
 
     # calculate the stereo_litophane
-    lito_mesh = modelbuilder.litophane.calculate_stereo_litophane_mesh(
+    lito_point_cloud = modelbuilder.litophane.calculate_stereo_litophane_point_cloud(
         disparity, baseline, fov, z_scale
     )
-    lito_fig = triangle_mesh_to_fig(lito_mesh)
+
+    # lito_fig = triangle_mesh_to_fig(lito_mesh)
+
+    # pandas data frame for the scatter plot
+    points = np.asarray(lito_point_cloud.points)
+    frm = pd.DataFrame(data=points, columns=["X", "Y", "Z"])
+
+    pc_fig = px.scatter_3d(
+        frm,
+        x="X",
+        y="Y",
+        z="Z",
+        color="Z",
+        color_continuous_scale=px.colors.sequential.Viridis,
+    )
+    pc_fig.update_traces(marker_size=1)
 
     # create figures to show on website
     titles = ["Disparity Map", "Stereo Litophane"]
@@ -117,7 +133,7 @@ def calculate_stereo_litophane(
         px.imshow(disparity, color_continuous_scale="gray").update_layout(
             margin=dict(b=0, l=0, r=0, t=0)
         ),
-        lito_fig,
+        pc_fig,
     ]
 
     return titles, figures

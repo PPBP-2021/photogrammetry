@@ -31,7 +31,7 @@ layout = html.Div(
                     id="minDisparity",
                     min=-128,
                     step=16,
-                    max=0,
+                    max=128,
                     value=0,
                     tooltip={"placement": "bottom", "always_visible": True},
                 ),
