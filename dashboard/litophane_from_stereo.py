@@ -21,6 +21,7 @@ from dashboard.layout import image_picker
 from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from image_utils import triangle_mesh_to_fig
+from imageprocessing import disparity as dp
 
 # all different PROPERTIES that are used to calc the Disparity
 PROPERTIES: List[str] = [
@@ -93,12 +94,12 @@ def calculate_stereo_litophane(
     img_right = cv2.resize(IMG_RIGHT, (0, 0), fx=resolution, fy=resolution)
 
     # feature matching
-    left_points, right_points, _ = modelbuilder.litophane.match_keypoints(
+    left_points, right_points, _ = dp.match_keypoints(
         img_left, img_right  # type: ignore
     )
 
     # calculate disparity map
-    disparity = modelbuilder.litophane.calculate_disparity(
+    disparity = dp.calculate_disparity(
         left_points,
         right_points,
         img_left,  # type: ignore

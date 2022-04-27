@@ -1,16 +1,12 @@
 import json
 import math
-from typing import Tuple
-from typing import Union
 
 import cv2
 import numpy as np
-import pandas as pd
-import plotly.express as px
 
 import image_utils as imgutils
-import imageprocessing as imgp
 import modelbuilder
+from imageprocessing import disparity as dp
 
 """SIMPLE DISPARITY MAP ONLY USING CV2.STEREO_BM"""
 stereo_left_img = cv2.imread("dashboard/assets/room_L.png", 0)
@@ -52,14 +48,12 @@ imgutils.show_img_grayscale(disparity_SGBM)
 
 """MORE COMPLICATED DISPARITY MAP USING KEYPOINT MATCHING AND FUNDAMENTAL MATRIX"""
 # keypoint matching
-left_points, right_points, _ = modelbuilder.match_keypoints(
-    stereo_left_img, stereo_right_img
-)
+left_points, right_points, _ = dp.match_keypoints(stereo_left_img, stereo_right_img)
 
 fundamental: np.ndarray
 inliers: np.ndarray
 # getting the fundamental matrix
-fundamental, inliers = modelbuilder.find_fundamental_matrix(left_points, right_points)
+fundamental, inliers = dp.find_fundamental_matrix(left_points, right_points)
 
 left_points = left_points[inliers.ravel() == 1]
 right_points = right_points[inliers.ravel() == 1]
