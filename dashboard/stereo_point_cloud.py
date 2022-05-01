@@ -79,18 +79,23 @@ def calculate_stereo_litophane(
     fov = img_dict["fov"]
 
     # get the current stereo image pair as grayscale
-    img_left = cv2.imread(img_dict["left_image"], cv2.IMREAD_GRAYSCALE)
-    img_right = cv2.imread(img_dict["right_image"], cv2.IMREAD_GRAYSCALE)
+    img_left_bgr = cv2.imread(img_dict["left_image"])
+    img_left = cv2.cvtColor(img_left_bgr, cv2.COLOR_BGR2GRAY)
+
+    img_right_bgr = cv2.imread(img_dict["right_image"])
+    img_right = cv2.cvtColor(img_right_bgr, cv2.COLOR_BGR2GRAY)
 
     # resize image
     img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
+    img_left_bgr = cv2.resize(img_left_bgr, (0, 0), fx=resolution, fy=resolution)
     img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
+    img_right_bgr = cv2.resize(img_right_bgr, (0, 0), fx=resolution, fy=resolution)
 
     # calculate disparity map
     disparity = dp.disparity_simple(
         img_left,  # type: ignore
         img_right,  # type: ignore
-        *properties
+        *properties,
     )
 
     # calculate the stereo_litophane
@@ -112,7 +117,12 @@ def calculate_stereo_litophane(
         color="Z",
         color_continuous_scale=px.colors.sequential.Viridis,
     )
-    pc_fig.update_traces(marker_size=1)
+    pc_fig.update_traces(
+        marker_size=1,
+        marker={
+            "color": [f"rgb({r},{g},{b})" for b, g, r in img_left_bgr.reshape(-1, 3)]
+        },
+    )
 
     # create figures to show on website
     titles = ["Disparity Map", "Point Cloud"]
