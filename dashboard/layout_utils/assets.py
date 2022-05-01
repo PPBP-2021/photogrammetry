@@ -28,3 +28,27 @@ def get_asset_images():
             )
 
     return returns
+
+
+@functools.lru_cache(maxsize=8)
+def get_asset_image_dict(image_path: str):
+    """Get the image dict for the given image path.
+
+    Parameters
+    ----------
+    image_path : str
+        The name of the left image, given from the image button.
+
+    Returns
+    -------
+    dict
+        The image dict.
+    """
+    for image in get_asset_images():
+        if image_path in str(image[0]):
+            # Update the image dict with the real image path
+            image[2]["left_image"] = str(image[0])
+            image[2]["right_image"] = str(image[1])
+            return image[2]
+
+    raise ValueError(f"No image found for {image_path}")

@@ -34,6 +34,7 @@ layout = html.Div(
                     max=128,
                     value=0,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -49,6 +50,7 @@ layout = html.Div(
                     max=12 * 16,
                     value=8 * 16,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -64,6 +66,7 @@ layout = html.Div(
                     max=15,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -79,6 +82,7 @@ layout = html.Div(
                     max=50,
                     value=4,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -94,6 +98,7 @@ layout = html.Div(
                     max=25,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -109,6 +114,7 @@ layout = html.Div(
                     max=200,
                     value=200,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -124,6 +130,7 @@ layout = html.Div(
                     max=5,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -139,6 +146,7 @@ layout = html.Div(
                     max=1,
                     value=0.5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
