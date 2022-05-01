@@ -10,7 +10,7 @@ layout = dbc.NavbarSimple(
             children=[
                 dbc.DropdownMenuItem("Image Segmentation", href="segmentation"),
                 dbc.DropdownMenuItem("Litophane", href="litophane"),
-                dbc.DropdownMenuItem("Stereo Litophane", href="litophane_from_stereo"),
+                dbc.DropdownMenuItem("Stereo Point Cloud", href="stereo_point_cloud"),
             ],
             nav=True,
             in_navbar=True,

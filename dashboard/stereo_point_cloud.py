@@ -1,9 +1,6 @@
-import pathlib
 from typing import Callable
-from typing import cast
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import cv2
 import dash
@@ -15,12 +12,11 @@ from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
-import modelbuilder.litophane
+import modelbuilder
 from dashboard.instance import app
 from dashboard.layout import image_picker
 from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
-from image_utils import triangle_mesh_to_fig
 from imageprocessing import disparity as dp
 
 # all different PROPERTIES that are used to calc the Disparity
@@ -90,22 +86,15 @@ def calculate_stereo_litophane(
     img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
     img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
 
-    # feature matching
-    left_points, right_points, _ = dp.match_keypoints(
-        img_left, img_right  # type: ignore
-    )
-
     # calculate disparity map
-    disparity = dp.calculate_disparity(
-        left_points,
-        right_points,
+    disparity = dp.disparity_simple(
         img_left,  # type: ignore
         img_right,  # type: ignore
         *properties
     )
 
     # calculate the stereo_litophane
-    lito_point_cloud = modelbuilder.litophane.calculate_stereo_litophane_point_cloud(
+    lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(
         disparity, baseline, fov, z_scale
     )
 
@@ -118,15 +107,15 @@ def calculate_stereo_litophane(
     pc_fig = px.scatter_3d(
         frm,
         x="X",
-        y="Y",
-        z="Z",
+        y="Z",
+        z="Y",
         color="Z",
         color_continuous_scale=px.colors.sequential.Viridis,
     )
     pc_fig.update_traces(marker_size=1)
 
     # create figures to show on website
-    titles = ["Disparity Map", "Stereo Litophane"]
+    titles = ["Disparity Map", "Point Cloud"]
     figures = [
         px.imshow(disparity, color_continuous_scale="gray").update_layout(
             margin=dict(b=0, l=0, r=0, t=0)

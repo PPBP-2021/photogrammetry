@@ -105,8 +105,8 @@ def calculate_disparity(
         minDisparity=minDisparity,
         numDisparities=numDisparities,
         blockSize=window_size,
-        P1=8 * 1 * window_size ** 2,
-        P2=32 * 1 * window_size ** 2,
+        P1=8 * 1 * window_size**2,
+        P2=32 * 1 * window_size**2,
         disp12MaxDiff=disp12MaxDiff,
         uniquenessRatio=uniquenessRatio,
         speckleWindowSize=speckleWindowSize,
@@ -121,5 +121,43 @@ def calculate_disparity(
         disparity, disparity, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
     )
     disparity = np.uint8(disparity)
+
+    return disparity
+
+
+def disparity_simple(
+    img_left: np.ndarray,
+    img_right: np.ndarray,
+    minDisparity=-1,
+    numDisparities=5 * 16,
+    window_size=5,
+    disp12MaxDiff=12,
+    uniquenessRatio=10,
+    speckleWindowSize=50,
+    speckleRange=32,
+) -> np.ndarray:
+
+    # disparity range has to be tuned for each image pair
+    stereo = cv2.StereoSGBM_create(
+        minDisparity=minDisparity,
+        numDisparities=numDisparities,
+        blockSize=window_size,
+        P1=8 * 1 * window_size**2,
+        P2=32 * 1 * window_size**2,
+        disp12MaxDiff=disp12MaxDiff,
+        uniquenessRatio=uniquenessRatio,
+        speckleWindowSize=speckleWindowSize,
+        speckleRange=speckleRange,
+        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
+    )
+
+    disparity = stereo.compute(img_left, img_right)
+
+    # Normalize the values to a range from 0..255 for a grayscale image
+    disparity = cv2.normalize(
+        disparity, disparity, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
+    )
+    disparity = np.uint8(disparity)
+    disparity = 255 - disparity
 
     return disparity
