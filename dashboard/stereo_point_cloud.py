@@ -23,7 +23,7 @@ from imageprocessing import disparity as dp
 PROPERTIES: List[str] = [
     "minDisparity",
     "numDisparities",
-    "window_size",
+    "block_size",
     "disp12MaxDiff",
     "uniquenessRatio",
     "speckleWindowSize",
@@ -50,13 +50,13 @@ def _select_scaling(radio_choice: str) -> Callable[[float], float]:
     }.get(radio_choice, lambda z: z)
 
 
-def calculate_stereo_litophane(
+def update_stereo_point_cloud(
     img_dict: dict,
     properties: List[int],
     resolution: float,
     z_scale: Callable[[float], float] = lambda z: z,
 ):
-    """Calculate the current stereo_litophane to be shown on the website togheter with its disparity map
+    """Calculate the current stereo_point_cloud to be shown on the website togheter with its disparity map
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def calculate_stereo_litophane(
     resolution : float
         Change resolution of the image to save computation time
     Optional[z_scale] : Callable[[float], float]
-        The z_scale used for the litophane
+        The z_scale used for the point_cloud
 
     Returns
     -------
@@ -98,7 +98,7 @@ def calculate_stereo_litophane(
         *properties,
     )
 
-    # calculate the stereo_litophane
+    # calculate the stereo_point_cloud
     lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(
         disparity, baseline, fov, z_scale
     )
@@ -171,7 +171,7 @@ def callback_stereo_lito(
     z_scale: str,
     memory: dict,
 ):
-    """Callback function for the stereo litophane calculation."""
+    """Callback function for the stereo point_cloud calculation."""
     if memory is None:
         memory = {}
 
@@ -198,7 +198,7 @@ def callback_stereo_lito(
     # Load the left and right image
     img_dict = assets.get_asset_image_dict(image_path)
 
-    titles, figures = calculate_stereo_litophane(
+    titles, figures = update_stereo_point_cloud(
         img_dict, stereo_properties, resolution, _select_scaling(z_scale)
     )
 

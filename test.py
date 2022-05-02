@@ -20,8 +20,8 @@ stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
 disparity = stereo.compute(stereo_left_img, stereo_right_img)
 imgutils.show_img_grayscale(disparity)
 
-# calculate the stereo_litophane
-lito_point_cloud = modelbuilder.litophane.calculate_stereo_litophane_point_cloud(
+# calculate the stereo_point_cloud
+lito_point_cloud = modelbuilder.point_cloud.calculate_stereo_point_cloud(
     disparity, baseline, fov
 )
 
@@ -69,15 +69,15 @@ left_rectified = cv2.warpPerspective(stereo_left_img, h_left, (width, height))
 right_rectified = cv2.warpPerspective(stereo_right_img, h_right, (width, height))
 
 # SGBM Parameters -----------------
-window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+block_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
 
 left_matcher = cv2.StereoSGBM_create(
     minDisparity=-1,
     numDisparities=15 * 16,  # max_disp has to be dividable by 16 f. E. HH 192, 256
-    blockSize=window_size,
-    P1=8 * 3 * window_size,
+    blockSize=block_size,
+    P1=8 * 3 * block_size,
     # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-    P2=32 * 3 * window_size,
+    P2=32 * 3 * block_size,
     disp12MaxDiff=12,
     uniquenessRatio=10,
     speckleWindowSize=50,

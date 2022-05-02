@@ -54,13 +54,13 @@ layout = html.Div(
                 ),
                 html.P(
                     html.Abbr(
-                        "window_size",
+                        "block_size",
                         title="Matched block size. It must be an odd number >=1 . Normally, it should be somewhere in the 3..11 range.",
                     ),
                     className="lead",
                 ),
                 dcc.Slider(
-                    id="window_size",
+                    id="block_size",
                     min=1,
                     step=2,
                     max=15,
@@ -151,7 +151,7 @@ layout = html.Div(
                 html.P(
                     html.Abbr(
                         "3D z-scale",
-                        title="Choose the method to scale the depth values (z) of the litophane",
+                        title="Choose the method to scale the depth values (z) of the point_cloud",
                     ),
                     className="lead",
                 ),
