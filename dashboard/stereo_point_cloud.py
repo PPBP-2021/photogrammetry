@@ -117,6 +117,7 @@ def update_stereo_point_cloud(
         color="Z",
         color_continuous_scale=px.colors.sequential.Viridis,
     )
+    # Set the color for each point, based on the original Image Colors
     pc_fig.update_traces(
         marker_size=1,
         marker={
