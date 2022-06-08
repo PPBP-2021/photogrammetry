@@ -18,6 +18,7 @@ from dashboard.layout import image_picker
 from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from imageprocessing import disparity as dp
+from imageprocessing import rectify as rf
 
 # all different PROPERTIES that are used to calc the Disparity
 PROPERTIES: List[str] = [
@@ -91,19 +92,22 @@ def update_stereo_point_cloud(
     img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
     img_right_bgr = cv2.resize(img_right_bgr, (0, 0), fx=resolution, fy=resolution)
 
+    # rectify images
+    img_left_rect, img_right_rect = rf.rectify(img_left, img_right)
     # calculate disparity map
     disparity = dp.disparity_simple(
-        img_left,  # type: ignore
-        img_right,  # type: ignore
+        img_left_rect,  # type: ignore
+        img_right_rect,  # type: ignore
         *properties,
     )
+
+    # ToDo: Add disparity cutoff threshold
+    # disparity[disparity < 100] = 255
 
     # calculate the stereo_point_cloud
     lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(
         disparity, baseline, fov, z_scale
     )
-
-    # lito_fig = triangle_mesh_to_fig(lito_mesh)
 
     # pandas data frame for the scatter plot
     points = np.asarray(lito_point_cloud.points)
@@ -117,12 +121,12 @@ def update_stereo_point_cloud(
         color="Z",
         color_continuous_scale=px.colors.sequential.Viridis,
     )
+
+    color = cv2.cvtColor(img_left_rect, cv2.COLOR_GRAY2RGB)
     # Set the color for each point, based on the original Image Colors
     pc_fig.update_traces(
         marker_size=1,
-        marker={
-            "color": [f"rgb({r},{g},{b})" for b, g, r in img_left_bgr.reshape(-1, 3)]
-        },
+        marker={"color": [f"rgb({r},{g},{b})" for b, g, r in color.reshape(-1, 3)]},
     )
 
     # create figures to show on website

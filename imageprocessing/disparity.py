@@ -121,6 +121,7 @@ def calculate_disparity(
         disparity, disparity, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
     )
     disparity = np.uint8(disparity)
+    disparity = 255 - disparity
 
     return disparity
 

@@ -1,0 +1,7 @@
+{
+    "left_image": "ML.png",
+    "right_image": "MR.png",
+    "baseline": 0.065,
+    "focal_length": 0.05,
+    "fov": 39.5978
+}
