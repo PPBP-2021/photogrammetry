@@ -18,7 +18,7 @@ with open("dashboard/assets/room.json") as fp:
     camera_parameters = json.load(fp)
     baseline = camera_parameters["baseline"]
     fov = camera_parameters["fov"]
-stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+'''stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
 disparity = stereo.compute(stereo_left_img, stereo_right_img)
 imgutils.show_img_grayscale(disparity)
 
@@ -46,7 +46,7 @@ stereo = cv2.StereoSGBM_create(
 disparity_SGBM = stereo.compute(stereo_left_img, stereo_right_img)
 """disparity_SGBM = cv2.normalize(disparity_SGBM, disparity_SGBM, alpha=255,beta=0,cv2.NORM_MINMAX)
 disparity_SGBM = np.uint8(disparity_SGBM)"""
-imgutils.show_img_grayscale(disparity_SGBM)
+imgutils.show_img_grayscale(disparity_SGBM)'''
 
 """MORE COMPLICATED DISPARITY MAP USING KEYPOINT MATCHING AND FUNDAMENTAL MATRIX"""
 # keypoint matching
@@ -60,7 +60,6 @@ fundamental, inliers = dp.find_fundamental_matrix(left_points, right_points)
 left_points = left_points[inliers.ravel() == 1]
 right_points = right_points[inliers.ravel() == 1]
 
-print(left_points)
 # get the homography matrices for each image
 h_left: np.ndarray
 h_right: np.ndarray
@@ -98,5 +97,6 @@ disparity_SGBM = cv2.normalize(
     disparity_SGBM, disparity_SGBM, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
 )
 disparity_SGBM = np.uint8(disparity_SGBM)
+disparity_SGBM = 255 - disparity_SGBM
 
 imgutils.show_img_grayscale(disparity_SGBM)
