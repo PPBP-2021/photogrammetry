@@ -3,14 +3,16 @@ import math
 
 import cv2
 import numpy as np
+import plotly.express as px
+from plotly.subplots import make_subplots
 
 import image_utils as imgutils
 import modelbuilder
 from imageprocessing import disparity as dp
 
 """SIMPLE DISPARITY MAP ONLY USING CV2.STEREO_BM"""
-stereo_left_img = cv2.imread("dashboard/assets/room_L.png", 0)
-stereo_right_img = cv2.imread("dashboard/assets/room_R.png", 0)
+stereo_left_img = cv2.imread("dashboard/assets/Manuel_L.jpg", 0)
+stereo_right_img = cv2.imread("dashboard/assets/Manuel_R.jpg", 0)
 width, height = stereo_left_img.shape
 with open("dashboard/assets/room.json") as fp:
     camera_parameters = json.load(fp)
@@ -21,11 +23,11 @@ disparity = stereo.compute(stereo_left_img, stereo_right_img)
 imgutils.show_img_grayscale(disparity)
 
 # calculate the stereo_point_cloud
-lito_point_cloud = modelbuilder.point_cloud.calculate_stereo_point_cloud(
+"""lito_point_cloud = modelbuilder.point_cloud.calculate_stereo_point_cloud(
     disparity, baseline, fov
 )
 
-imgutils.show_point_cloud(lito_point_cloud)
+imgutils.show_point_cloud(lito_point_cloud)"""
 
 """USING STEREO_SGBM FOR THE DISPARITY MAP"""
 stereo = cv2.StereoSGBM_create(
@@ -58,54 +60,43 @@ fundamental, inliers = dp.find_fundamental_matrix(left_points, right_points)
 left_points = left_points[inliers.ravel() == 1]
 right_points = right_points[inliers.ravel() == 1]
 
+print(left_points)
 # get the homography matrices for each image
 h_left: np.ndarray
 h_right: np.ndarray
 _, h_left, h_right = cv2.stereoRectifyUncalibrated(
-    left_points, right_points, fundamental, imgSize=(width, height)
+    np.float32(left_points),
+    np.float32(right_points),
+    fundamental,
+    imgSize=(width, height),
 )
 
 left_rectified = cv2.warpPerspective(stereo_left_img, h_left, (width, height))
 right_rectified = cv2.warpPerspective(stereo_right_img, h_right, (width, height))
 
-# SGBM Parameters -----------------
-block_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+fig = make_subplots(rows=1, cols=2)
+fig.add_trace(px.imshow(left_rectified).data[0], row=1, col=1)
+fig.add_trace(px.imshow(right_rectified).data[0], row=1, col=2)
+fig.show()
 
-left_matcher = cv2.StereoSGBM_create(
-    minDisparity=-1,
-    numDisparities=15 * 16,  # max_disp has to be dividable by 16 f. E. HH 192, 256
-    blockSize=block_size,
-    P1=8 * 3 * block_size,
+stereo = cv2.StereoSGBM_create(
+    minDisparity=-128,
+    numDisparities=192,  # max_disp has to be dividable by 16 f. E. HH 192, 256
+    blockSize=11,
+    P1=8 * 1 * 11 * 11,
     # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-    P2=32 * 3 * block_size,
-    disp12MaxDiff=12,
-    uniquenessRatio=10,
-    speckleWindowSize=50,
-    speckleRange=32,
-    preFilterCap=63,
-    mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
+    P2=32 * 1 * 11 * 11,
+    disp12MaxDiff=0,
+    uniquenessRatio=5,
+    speckleWindowSize=200,
+    speckleRange=2,
 )
-right_matcher = cv2.ximgproc.createRightMatcher(left_matcher)
-# FILTER Parameters
-lmbda = 80000
-sigma = 1.3
-visual_multiplier = 6
+disparity_SGBM = stereo.compute(left_rectified, right_rectified)
 
-wls_filter = cv2.ximgproc.createDisparityWLSFilter(matcher_left=left_matcher)
-wls_filter.setLambda(lmbda)
-
-wls_filter.setSigmaColor(sigma)
-displ = left_matcher.compute(left_rectified, right_rectified)  # .astype(np.float32)/16
-dispr = right_matcher.compute(right_rectified, left_rectified)  # .astype(np.float32)/16
-displ = np.int16(displ)
-dispr = np.int16(dispr)
-filteredImg = wls_filter.filter(
-    displ, left_rectified, None, dispr
-)  # important to put "imgL" here!!!
-
-filteredImg = cv2.normalize(
-    src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX
+# Normalize the values to a range from 0..255 for a grayscale image
+disparity_SGBM = cv2.normalize(
+    disparity_SGBM, disparity_SGBM, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
 )
-filteredImg = np.uint8(filteredImg)
+disparity_SGBM = np.uint8(disparity_SGBM)
 
-imgutils.show_img_grayscale(filteredImg)
+imgutils.show_img_grayscale(disparity_SGBM)
