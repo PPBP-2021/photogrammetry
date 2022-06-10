@@ -1,0 +1,7 @@
+{
+    "left_image": "Minecraft360_left_L.png",
+    "right_image": "Minecraft360_left_R.png",
+    "baseline": 0.8,
+    "focal_length": 0.1,
+    "fov": 60
+}

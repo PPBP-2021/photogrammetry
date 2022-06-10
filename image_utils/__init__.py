@@ -145,8 +145,8 @@ def show_point_cloud(point_cloud: open3d.geometry.PointCloud):
     pc_fig = px.scatter_3d(
         frm,
         x="X",
-        y="Y",
-        z="Z",
+        y="Z",
+        z="Y",
         color="Z",
         color_continuous_scale=px.colors.sequential.Viridis,
     )

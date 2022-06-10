@@ -1,24 +1,28 @@
 import json
-import math
 
 import cv2
 import numpy as np
+import open3d
 import plotly.express as px
 from plotly.subplots import make_subplots
 
 import image_utils as imgutils
-import modelbuilder
+import modelbuilder as mb
 from imageprocessing import disparity as dp
+from imageprocessing import rectify
 
 """SIMPLE DISPARITY MAP ONLY USING CV2.STEREO_BM"""
-stereo_left_img = cv2.imread("dashboard/assets/Manuel_L.jpg", 0)
-stereo_right_img = cv2.imread("dashboard/assets/Manuel_R.jpg", 0)
-width, height = stereo_left_img.shape
+'''stereo_left_img_bgr = cv2.imread("dashboard/assets/Manuel_L.jpg")
+stereo_right_img_bgr = cv2.imread("dashboard/assets/Manuel_R.jpg")
+stereo_left_img = cv2.cvtColor(stereo_left_img_bgr, cv2.COLOR_BGR2GRAY)
+stereo_right_img = cv2.cvtColor(stereo_right_img_bgr, cv2.COLOR_BGR2GRAY)
+
+height, width = stereo_left_img.shape
 with open("dashboard/assets/room.json") as fp:
     camera_parameters = json.load(fp)
     baseline = camera_parameters["baseline"]
     fov = camera_parameters["fov"]
-'''stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
 disparity = stereo.compute(stereo_left_img, stereo_right_img)
 imgutils.show_img_grayscale(disparity)
 
@@ -46,57 +50,94 @@ stereo = cv2.StereoSGBM_create(
 disparity_SGBM = stereo.compute(stereo_left_img, stereo_right_img)
 """disparity_SGBM = cv2.normalize(disparity_SGBM, disparity_SGBM, alpha=255,beta=0,cv2.NORM_MINMAX)
 disparity_SGBM = np.uint8(disparity_SGBM)"""
+imgutils.show_img_grayscale(disparity_SGBM)
+
+"""MORE COMPLICATED DISPARITY MAP USING KEYPOINT MATCHING AND FUNDAMENTAL MATRIX TO RECTIFY IMAGE"""
+
+rectified_left, rectified_right = rectify.rectify(stereo_left_img, stereo_right_img)
+
+disparity_SGBM = dp.disparity_simple(rectified_left, rectified_right, -64, 128, 5, 4, 5, 200, 2)
+
 imgutils.show_img_grayscale(disparity_SGBM)'''
 
-"""MORE COMPLICATED DISPARITY MAP USING KEYPOINT MATCHING AND FUNDAMENTAL MATRIX"""
-# keypoint matching
-left_points, right_points, _ = dp.match_keypoints(stereo_left_img, stereo_right_img)
+"""START TRYING TO WORK ON 4 different angles (360 degrees) TO GENERATE FULL 3D model"""
 
-fundamental: np.ndarray
-inliers: np.ndarray
-# getting the fundamental matrix
-fundamental, inliers = dp.find_fundamental_matrix(left_points, right_points)
+with open("dashboard/assets/Minecraft360_front.json") as fp:
+    camera_parameters = json.load(fp)
+    baseline = camera_parameters["baseline"]
+    fov = camera_parameters["fov"]
 
-left_points = left_points[inliers.ravel() == 1]
-right_points = right_points[inliers.ravel() == 1]
+front_L_bgr = cv2.imread("dashboard/assets/Minecraft360_front_L.png")
+front_R_bgr = cv2.imread("dashboard/assets/Minecraft360_front_R.png")
+front_L = cv2.cvtColor(front_L_bgr, cv2.COLOR_BGR2GRAY)
+front_R = cv2.cvtColor(front_R_bgr, cv2.COLOR_BGR2GRAY)
 
-# get the homography matrices for each image
-h_left: np.ndarray
-h_right: np.ndarray
-_, h_left, h_right = cv2.stereoRectifyUncalibrated(
-    np.float32(left_points),
-    np.float32(right_points),
-    fundamental,
-    imgSize=(width, height),
-)
+back_L_bgr = cv2.imread("dashboard/assets/Minecraft360_back_L.png")
+back_R_bgr = cv2.imread("dashboard/assets/Minecraft360_back_R.png")
+back_L = cv2.cvtColor(back_L_bgr, cv2.COLOR_BGR2GRAY)
+back_R = cv2.cvtColor(back_R_bgr, cv2.COLOR_BGR2GRAY)
 
-left_rectified = cv2.warpPerspective(stereo_left_img, h_left, (width, height))
-right_rectified = cv2.warpPerspective(stereo_right_img, h_right, (width, height))
+left_L_bgr = cv2.imread("dashboard/assets/Minecraft360_left_L.png")
+left_R_bgr = cv2.imread("dashboard/assets/Minecraft360_left_R.png")
+left_L = cv2.cvtColor(left_L_bgr, cv2.COLOR_BGR2GRAY)
+left_R = cv2.cvtColor(left_R_bgr, cv2.COLOR_BGR2GRAY)
 
-fig = make_subplots(rows=1, cols=2)
-fig.add_trace(px.imshow(left_rectified).data[0], row=1, col=1)
-fig.add_trace(px.imshow(right_rectified).data[0], row=1, col=2)
-fig.show()
+right_L_bgr = cv2.imread("dashboard/assets/Minecraft360_right_L.png")
+right_R_bgr = cv2.imread("dashboard/assets/Minecraft360_right_R.png")
+right_L = cv2.cvtColor(right_L_bgr, cv2.COLOR_BGR2GRAY)
+right_R = cv2.cvtColor(right_R_bgr, cv2.COLOR_BGR2GRAY)
 
-stereo = cv2.StereoSGBM_create(
-    minDisparity=-128,
-    numDisparities=192,  # max_disp has to be dividable by 16 f. E. HH 192, 256
-    blockSize=11,
-    P1=8 * 1 * 11 * 11,
-    # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-    P2=32 * 1 * 11 * 11,
-    disp12MaxDiff=0,
-    uniquenessRatio=5,
-    speckleWindowSize=200,
-    speckleRange=2,
-)
-disparity_SGBM = stereo.compute(left_rectified, right_rectified)
+# rectified_front_L, rectified_front_R = rectify.rectify(front_L, front_R)
+disparity_front = dp.disparity_simple(front_L, front_R, -64, 128, 5, 4, 5, 200, 2)
 
-# Normalize the values to a range from 0..255 for a grayscale image
-disparity_SGBM = cv2.normalize(
-    disparity_SGBM, disparity_SGBM, alpha=255, beta=0, norm_type=cv2.NORM_MINMAX
-)
-disparity_SGBM = np.uint8(disparity_SGBM)
-disparity_SGBM = 255 - disparity_SGBM
+# rectified_back_L, rectified_back_R = rectify.rectify(back_L, back_R)
+disparity_back = dp.disparity_simple(back_L, back_R, -64, 128, 5, 4, 5, 200, 2)
 
-imgutils.show_img_grayscale(disparity_SGBM)
+# rectified_left_L, rectified_left_R = rectify.rectify(left_L, left_R)
+disparity_left = dp.disparity_simple(left_L, left_R, -64, 128, 5, 4, 5, 200, 2)
+
+# rectified_right_L, rectified_right_R = rectify.rectify(right_L, right_R)
+disparity_right = dp.disparity_simple(right_L, right_R, -64, 128, 5, 4, 5, 200, 2)
+
+height, width = front_L.shape
+
+# calculate the focal length in pixels
+focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi / 180)
+
+disparity_front = disparity_front.astype(float)
+disparity_front[disparity_front == 0] = np.inf
+disparity_front[disparity_front < 90] = 255
+disparity_back = disparity_back.astype(float)
+disparity_back[disparity_back == 0] = np.inf
+disparity_back[disparity_back < 90] = 255
+disparity_left = disparity_left.astype(float)
+disparity_left[disparity_left == 0] = np.inf
+disparity_left[disparity_left < 90] = 255
+disparity_right = disparity_right.astype(float)
+disparity_right[disparity_right == 0] = np.inf
+disparity_right[disparity_right < 90] = 255
+
+X = np.array([i / height for i in range(width)] * height)
+Y = np.array([(height - i // width) / height for i in range(height * width)])
+
+Z_front = ((baseline * focal_length) / disparity_front).reshape(height * width)
+Z_back = ((baseline * focal_length) / disparity_back).reshape(height * width)
+Z_left = ((baseline * focal_length) / disparity_left).reshape(height * width)
+Z_right = ((baseline * focal_length) / disparity_right).reshape(height * width)
+
+xyz_front = np.stack((X, Y, Z_front), axis=1)
+xyz_back = np.stack((X, Y, X - Z_back), axis=1)
+xyz_left = np.stack((Z_left - X / 2, Y, X), axis=1)
+xyz_right = np.stack((X + Z_right, Y, -X), axis=1)
+
+total_point_cloud = np.concatenate((xyz_front, xyz_left), axis=0)
+total_point_cloud = total_point_cloud[total_point_cloud[:, 0] > 0.1]
+total_point_cloud = total_point_cloud[total_point_cloud[:, 1] > 0.1]
+total_point_cloud = total_point_cloud[total_point_cloud[:, 2] > 0.1]
+
+point_cloud = open3d.geometry.PointCloud()
+point_cloud.points = open3d.utility.Vector3dVector(total_point_cloud)
+# point_cloud = point_cloud.voxel_down_sample(voxel_size=0.05)
+
+open3d.visualization.draw_geometries([point_cloud])
+# imgutils.show_point_cloud(point_cloud)
