@@ -98,9 +98,7 @@ disparity_left = dp.disparity_simple(left_L, left_R, -64, 128, 5, 4, 5, 200, 2)
 
 # rectified_right_L, rectified_right_R = rectify.rectify(right_L, right_R)
 disparity_right = dp.disparity_simple(right_L, right_R, -64, 128, 5, 4, 5, 200, 2)
-
 height, width = front_L.shape
-
 # calculate the focal length in pixels
 focal_length = (width * 0.5) / np.tan(fov * 0.5 * np.pi / 180)
 
@@ -125,19 +123,40 @@ Z_back = ((baseline * focal_length) / disparity_back).reshape(height * width)
 Z_left = ((baseline * focal_length) / disparity_left).reshape(height * width)
 Z_right = ((baseline * focal_length) / disparity_right).reshape(height * width)
 
-xyz_front = np.stack((X, Y, Z_front), axis=1)
-xyz_back = np.stack((X, Y, X - Z_back), axis=1)
-xyz_left = np.stack((Z_left - X / 2, Y, X), axis=1)
-xyz_right = np.stack((X + Z_right, Y, -X), axis=1)
 
-total_point_cloud = np.concatenate((xyz_front, xyz_left), axis=0)
-total_point_cloud = total_point_cloud[total_point_cloud[:, 0] > 0.1]
-total_point_cloud = total_point_cloud[total_point_cloud[:, 1] > 0.1]
-total_point_cloud = total_point_cloud[total_point_cloud[:, 2] > 0.1]
+def cutoff(Z, X, Y, cutoff_value_min, cutoff_value_max):
+    keep = np.where(Z > cutoff_value_min)[0]
+    X = X[keep]
+    Y = Y[keep]
+    Z = Z[keep]
+    keep = np.where(Z < cutoff_value_max)[0]
+    X = X[keep]
+    Y = Y[keep]
+    Z = Z[keep]
+    return X, Y, Z
+
+
+f_x, f_y, f_z = cutoff(Z_front, X, Y, 0.5, 1.75)
+b_x, b_y, b_z = cutoff(Z_back, X, Y, 0.5, 1.75)
+l_x, l_y, l_z = cutoff(Z_left, X, Y, 0.5, 1.75)
+r_x, r_y, r_z = cutoff(Z_right, X, Y, 0.5, 1.75)
+
+
+# width/heigh is the max X value
+# Use -Z for front to fix X axis
+xyz_front = np.stack((f_x, f_y, -f_z + width / height), axis=1)
+xyz_left = np.stack((-l_z + width / height, l_y, l_x), axis=1)
+xyz_back = np.stack((b_x, b_y, b_z), axis=1)
+xyz_right = np.stack((r_z, r_y, r_x), axis=1)
+
+
+total_point_cloud = np.concatenate((xyz_front, xyz_left, xyz_back, xyz_right), axis=0)
+total_point_cloud = np.concatenate((total_point_cloud, np.zeros((1, 3))), axis=0)
 
 point_cloud = open3d.geometry.PointCloud()
 point_cloud.points = open3d.utility.Vector3dVector(total_point_cloud)
 # point_cloud = point_cloud.voxel_down_sample(voxel_size=0.05)
 
-open3d.visualization.draw_geometries([point_cloud])
+grid = open3d.geometry.VoxelGrid.create_from_point_cloud(point_cloud, voxel_size=0.05)
+open3d.visualization.draw_geometries([grid])
 # imgutils.show_point_cloud(point_cloud)
