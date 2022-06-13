@@ -14,7 +14,7 @@ from dash import html
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
-from dashboard.layout import image_picker
+from dashboard.layout import image_picker_stereo
 from dashboard.layout import litophane_properties
 from dashboard.layout import navbar
 from image_utils import triangle_mesh_to_fig
@@ -43,7 +43,7 @@ def _create_segmentation_fig(seg_img):
 
 
 layout = [
-    image_picker.layout,  # the image picker on the very left side
+    image_picker_stereo.layout,  # the image picker on the very left side
     litophane_properties.layout,  # properties on the very right side
     navbar.layout,  # navigation on top of the website
     html.Div(
@@ -105,7 +105,10 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
 
 @app.callback(
     dash.Output("graphs-out-lito", "children"),
-    [dash.Input(image_id[0].stem, "n_clicks") for image_id in assets.get_asset_images()]
+    [
+        dash.Input(image_id[0].stem, "n_clicks")
+        for image_id in assets.get_asset_images_stereo()
+    ]
     + [
         dash.Input("gray_treshold", "value"),
         dash.Input("resolution", "value"),
@@ -114,7 +117,7 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
 )
 def select_image(*inputs: Tuple[Any]):
     global CURRENT_SEG
-    asset_images = assets.get_asset_images()
+    asset_images = assets.get_asset_images_stereo()
 
     # update all our property values
     gray_treshold: float = cast(float, inputs[-3])

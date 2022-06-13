@@ -14,13 +14,13 @@ import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
 import modelbuilder
 from dashboard.instance import app
-from dashboard.layout import image_picker_stereo
+from dashboard.layout import image_picker_final_model
 from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from imageprocessing import disparity as dp
 from imageprocessing import rectify as rf
 
-# all different PROPERTIES that are used to calc the Disparity
+# all different PROPERTIES that are used to calc the Disparity maps
 PROPERTIES: List[str] = [
     "minDisparity",
     "numDisparities",
@@ -51,13 +51,13 @@ def _select_scaling(radio_choice: str) -> Callable[[float], float]:
     }.get(radio_choice, lambda z: z)
 
 
-def update_stereo_point_cloud(
+def update_final_model(
     img_dict: dict,
     properties: List[int],
     resolution: float,
     z_scale: Callable[[float], float] = lambda z: z,
 ):
-    """Calculate the current stereo_point_cloud to be shown on the website togheter with its disparity map
+    """Calculate the current 3D Model to be shown on the website
 
     Parameters
     ----------
@@ -79,38 +79,89 @@ def update_stereo_point_cloud(
     baseline = img_dict["baseline"]
     fov = img_dict["fov"]
 
-    # get the current stereo image pair as grayscale
-    img_left_bgr = cv2.imread(img_dict["left_image"])
-    img_left = cv2.cvtColor(img_left_bgr, cv2.COLOR_BGR2GRAY)
+    # get all stereo image pairs needed for the 3D model
+    img_front_L = cv2.cvtColor(
+        cv2.imread(img_dict["front_image_pair"][0]), cv2.COLOR_BGR2GRAY
+    )
+    img_front_R = cv2.cvtColor(
+        cv2.imread(img_dict["front_image_pair"][1]), cv2.COLOR_BGR2GRAY
+    )
 
-    img_right_bgr = cv2.imread(img_dict["right_image"])
-    img_right = cv2.cvtColor(img_right_bgr, cv2.COLOR_BGR2GRAY)
+    img_back_L = cv2.cvtColor(
+        cv2.imread(img_dict["back_image_pair"][0]), cv2.COLOR_BGR2GRAY
+    )
+    img_back_R = cv2.cvtColor(
+        cv2.imread(img_dict["back_image_pair"][1]), cv2.COLOR_BGR2GRAY
+    )
+
+    img_left_L = cv2.cvtColor(
+        cv2.imread(img_dict["left_image_pair"][0]), cv2.COLOR_BGR2GRAY
+    )
+    img_left_R = cv2.cvtColor(
+        cv2.imread(img_dict["left_image_pair"][1]), cv2.COLOR_BGR2GRAY
+    )
+
+    img_right_L = cv2.cvtColor(
+        cv2.imread(img_dict["right_image_pair"][0]), cv2.COLOR_BGR2GRAY
+    )
+    img_right_R = cv2.cvtColor(
+        cv2.imread(img_dict["right_image_pair"][1]), cv2.COLOR_BGR2GRAY
+    )
 
     # resize image
-    img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
-    img_left_bgr = cv2.resize(img_left_bgr, (0, 0), fx=resolution, fy=resolution)
-    img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
-    img_right_bgr = cv2.resize(img_right_bgr, (0, 0), fx=resolution, fy=resolution)
+    img_front_L = cv2.resize(img_front_L, (0, 0), fx=resolution, fy=resolution)
+    img_front_R = cv2.resize(img_front_R, (0, 0), fx=resolution, fy=resolution)
+    img_back_L = cv2.resize(img_back_L, (0, 0), fx=resolution, fy=resolution)
+    img_back_R = cv2.resize(img_back_R, (0, 0), fx=resolution, fy=resolution)
+    img_left_L = cv2.resize(img_left_L, (0, 0), fx=resolution, fy=resolution)
+    img_left_R = cv2.resize(img_left_R, (0, 0), fx=resolution, fy=resolution)
+    img_right_L = cv2.resize(img_right_L, (0, 0), fx=resolution, fy=resolution)
+    img_right_R = cv2.resize(img_right_R, (0, 0), fx=resolution, fy=resolution)
 
     # rectify images
-    img_left_rect, img_right_rect = rf.rectify(img_left, img_right)
-    # calculate disparity map
-    disparity = dp.disparity_simple(
-        img_left_rect,  # type: ignore
-        img_right_rect,  # type: ignore
+    # TODO
+
+    # calculate all disparity maps
+    disparity_front = dp.disparity_simple(
+        img_front_L,  # type: ignore
+        img_front_R,  # type: ignore
+        *properties,
+    )
+
+    disparity_back = dp.disparity_simple(
+        img_back_L,  # type: ignore
+        img_back_R,  # type: ignore
+        *properties,
+    )
+
+    disparity_left = dp.disparity_simple(
+        img_left_L,  # type: ignore
+        img_left_R,  # type: ignore
+        *properties,
+    )
+
+    disparity_right = dp.disparity_simple(
+        img_right_L,  # type: ignore
+        img_right_R,  # type: ignore
         *properties,
     )
 
     # ToDo: Add disparity cutoff threshold
     # disparity[disparity < 100] = 255
 
-    # calculate the stereo_point_cloud
-    lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(
-        disparity, baseline, fov, z_scale
+    # calculate the 3D model point cloud
+    final_point_cloud = modelbuilder.calculate_point_cloud_final_model(
+        disparity_front,
+        disparity_back,
+        disparity_left,
+        disparity_right,
+        baseline,
+        fov,
+        z_scale,
     )
 
     # pandas data frame for the scatter plot
-    points = np.asarray(lito_point_cloud.points)
+    points = np.asarray(final_point_cloud.points)
     frm = pd.DataFrame(data=points, columns=["X", "Y", "Z"])
 
     pc_fig = px.scatter_3d(
@@ -122,19 +173,9 @@ def update_stereo_point_cloud(
         color_continuous_scale=px.colors.sequential.Viridis,
     )
 
-    color = cv2.cvtColor(img_left_rect, cv2.COLOR_GRAY2RGB)
-    # Set the color for each point, based on the original Image Colors
-    pc_fig.update_traces(
-        marker_size=1,
-        marker={"color": [f"rgb({r},{g},{b})" for b, g, r in color.reshape(-1, 3)]},
-    )
-
     # create figures to show on website
-    titles = ["Disparity Map", "Point Cloud"]
+    titles = ["Point Cloud"]
     figures = [
-        px.imshow(disparity, color_continuous_scale="gray").update_layout(
-            margin=dict(b=0, l=0, r=0, t=0)
-        ),
         pc_fig,
     ]
 
@@ -142,12 +183,12 @@ def update_stereo_point_cloud(
 
 
 layout = [
-    dcc.Store(id="memory-stereo-lito", storage_type="session"),
-    image_picker_stereo.layout,
+    dcc.Store(id="memory-final-model", storage_type="session"),
+    image_picker_final_model.layout,
     stereo_properties.layout,
     navbar.layout,
     html.Div(
-        dcc.Loading(html.Div([], id="graphs-out-stereo")),
+        dcc.Loading(html.Div([], id="graphs-out-model")),
         style={"margin": "0 auto", "width": "50%", "textAlign": "start"},
     ),
 ]
@@ -155,28 +196,28 @@ layout = [
 
 @app.callback(
     output=[
-        dash.Output("graphs-out-stereo", "children"),
-        dash.Output("memory-stereo-lito", "data"),
+        dash.Output("graphs-out-model", "children"),
+        dash.Output("memory-final-model", "data"),
     ],
     inputs={
         "image_buttons": [
             dash.Input(image_id[0].stem, "n_clicks")
-            for image_id in assets.get_asset_images_stereo()
+            for image_id in assets.get_asset_images_final_model()
         ],
         "stereo_properties": [dash.Input(prop, "value") for prop in PROPERTIES],
         "resolution": dash.Input("resolution_stereo", "value"),
         "z_scale": dash.Input("z_scale_stereo", "value"),
     },
-    state={"memory": dash.State("memory-stereo-lito", "data")},
+    state={"memory": dash.State("memory-final-model", "data")},
 )
-def callback_stereo_lito(
+def callback_final_model(
     image_buttons: list,
     stereo_properties: List[int],
     resolution: float,
     z_scale: str,
     memory: dict,
 ):
-    """Callback function for the stereo point_cloud calculation."""
+    """Callback function for the 3D model calculation."""
     if memory is None:
         memory = {}
 
@@ -201,9 +242,9 @@ def callback_stereo_lito(
         image_path = prop_id.replace(".n_clicks", "")
 
     # Load the left and right image
-    img_dict = assets.get_asset_image_dict_stereo(image_path)
+    img_dict = assets.get_asset_image_dict_final_model(image_path)
 
-    titles, figures = update_stereo_point_cloud(
+    titles, figures = update_final_model(
         img_dict, stereo_properties, resolution, _select_scaling(z_scale)
     )
 

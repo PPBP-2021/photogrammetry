@@ -1,2 +1,3 @@
 from modelbuilder.litophane import litophane_from_image
+from modelbuilder.point_cloud import calculate_point_cloud_final_model
 from modelbuilder.point_cloud import calculate_stereo_point_cloud

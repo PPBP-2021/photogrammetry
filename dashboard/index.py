@@ -2,6 +2,7 @@ import dash
 from dash import dcc
 from dash import html
 
+from dashboard import final_model
 from dashboard import home
 from dashboard import image_segmentation
 from dashboard import litophane
@@ -23,4 +24,5 @@ def display_page(pathname: str):
         "/segmentation": image_segmentation.layout,
         "/litophane": litophane.layout,
         "/stereo_point_cloud": stereo_point_cloud.layout,
+        "/final_model": final_model.layout,
     }.get(pathname, "404")
