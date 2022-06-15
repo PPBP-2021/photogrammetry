@@ -49,16 +49,12 @@ def calculate_point_cloud_final_model(
 
     disparity_front = disparity_front.astype(float)
     disparity_front[disparity_front == 0] = np.inf
-    disparity_front[disparity_front < 90] = 255
     disparity_back = disparity_back.astype(float)
     disparity_back[disparity_back == 0] = np.inf
-    disparity_back[disparity_back < 90] = 255
     disparity_left = disparity_left.astype(float)
     disparity_left[disparity_left == 0] = np.inf
-    disparity_left[disparity_left < 90] = 255
     disparity_right = disparity_right.astype(float)
     disparity_right[disparity_right == 0] = np.inf
-    disparity_right[disparity_right < 90] = 255
 
     X = np.array([i / height for i in range(width)] * height)
     Y = np.array([(height - i // width) / height for i in range(height * width)])
@@ -68,26 +64,24 @@ def calculate_point_cloud_final_model(
     Z_left = ((baseline * focal_length) / disparity_left).reshape(height * width)
     Z_right = ((baseline * focal_length) / disparity_right).reshape(height * width)
 
-    def cutoff(Z, X, Y, cutoff_value_min, cutoff_value_max):
+    def cutoff(Z, X, Y, cutoff_value_min):
         keep = np.where(Z > cutoff_value_min)[0]
-        X = X[keep]
-        Y = Y[keep]
-        Z = Z[keep]
-        keep = np.where(Z < cutoff_value_max)[0]
         X = X[keep]
         Y = Y[keep]
         Z = Z[keep]
         return X, Y, Z
 
-    f_x, f_y, f_z = cutoff(Z_front, X, Y, 0.5, 1.75)
-    b_x, b_y, b_z = cutoff(Z_back, X, Y, 0.5, 1.75)
-    l_x, l_y, l_z = cutoff(Z_left, X, Y, 0.5, 1.75)
-    r_x, r_y, r_z = cutoff(Z_right, X, Y, 0.5, 1.75)
+    f_x, f_y, f_z = cutoff(Z_front, X, Y, 0)
+    b_x, b_y, b_z = cutoff(Z_back, X, Y, 0)
+    l_x, l_y, l_z = cutoff(Z_left, X, Y, 0)
+    r_x, r_y, r_z = cutoff(Z_right, X, Y, 0)
 
     # width/heigh is the max X value
+    ratio = width / height
     # Use -Z for front to fix X axis
-    xyz_front = np.stack((f_x, f_y, -f_z + width / height), axis=1)
-    xyz_left = np.stack((-l_z + width / height, l_y, l_x), axis=1)
+    # TODO fix rotations and transformations
+    xyz_front = np.stack((f_x, f_y, -f_z + ratio), axis=1)
+    xyz_left = np.stack((-l_z + ratio, l_y, l_x), axis=1)
     xyz_back = np.stack((b_x, b_y, b_z), axis=1)
     xyz_right = np.stack((r_z, r_y, r_x), axis=1)
 

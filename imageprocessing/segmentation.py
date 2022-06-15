@@ -92,3 +92,54 @@ def segmentate_grayscale(
     x, y, w, h = bounding_rect
 
     return image[y : y + h, x : x + w]  # type: ignore
+
+
+def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.ndarray:
+    """Segmentates the given disparity map
+
+    We want to segmentate the disparity so it only contains the main object of the image
+
+    Parameters
+    ----------
+    disparity : np.ndarray, str
+        The disparity map we want to segmentate to only contain the main objects
+
+    Returns
+    -------
+    np.ndarray
+        np.ndarray holding all pixels in BGR format segmentated by the threshold.
+    """
+
+    ret, th = cv2.threshold(disparity, 200, 255, cv2.THRESH_BINARY)
+
+    kernel = np.ones((15, 15), np.uint8)
+    dilate = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel, 3)
+
+    dilate = cv2.bitwise_and(disparity, disparity, mask=dilate)
+
+    return dilate
+
+    # Step 4: Find largest contour
+    largest_cntr = np.zeros(disparity.shape, dtype=disparity.dtype)
+
+    contours, hierarchy = cv2.findContours(dilate, 2, 1)
+
+    largest_cntr_indx = max(enumerate(contours), key=lambda x: cv2.contourArea(x[1]))[0]
+    bounding_rect = cv2.boundingRect(contours[largest_cntr_indx])
+
+    largest_cntr = cv2.drawContours(
+        image=largest_cntr,
+        contours=contours,
+        contourIdx=largest_cntr_indx,
+        color=255,
+        thickness=cv2.FILLED,
+        hierarchy=hierarchy,
+    )
+
+    if explain:
+        imgutils.show_img(largest_cntr, title="Largest Contour")
+
+    image = cv2.bitwise_and(disparity, disparity, mask=largest_cntr)
+    x, y, w, h = bounding_rect
+
+    return image[y : y + h, x : x + w]  # type: ignore

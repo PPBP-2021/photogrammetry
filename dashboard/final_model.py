@@ -19,6 +19,7 @@ from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from imageprocessing import disparity as dp
 from imageprocessing import rectify as rf
+from imageprocessing import segmentate_disparity
 
 # all different PROPERTIES that are used to calc the Disparity maps
 PROPERTIES: List[str] = [
@@ -128,11 +129,15 @@ def update_final_model(
         *properties,
     )
 
+    disparity_front = segmentate_disparity(disparity_front, explain=True)
+
     disparity_back = dp.disparity_simple(
         img_back_L,  # type: ignore
         img_back_R,  # type: ignore
         *properties,
     )
+
+    disparity_back = segmentate_disparity(disparity_back)
 
     disparity_left = dp.disparity_simple(
         img_left_L,  # type: ignore
@@ -140,11 +145,15 @@ def update_final_model(
         *properties,
     )
 
+    disparity_left = segmentate_disparity(disparity_left)
+
     disparity_right = dp.disparity_simple(
         img_right_L,  # type: ignore
         img_right_R,  # type: ignore
         *properties,
     )
+
+    disparity_right = segmentate_disparity(disparity_right)
 
     # ToDo: Add disparity cutoff threshold
     # disparity[disparity < 100] = 255
@@ -174,8 +183,11 @@ def update_final_model(
     )
 
     # create figures to show on website
-    titles = ["Point Cloud"]
+    titles = ["Front disparity", "Point Cloud"]
     figures = [
+        px.imshow(disparity_front, color_continuous_scale="gray").update_layout(
+            margin=dict(b=0, l=0, r=0, t=0)
+        ),
         pc_fig,
     ]
 
