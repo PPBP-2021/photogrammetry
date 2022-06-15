@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import open3d
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.graph_objs as go
@@ -134,3 +135,21 @@ def triangle_mesh_to_fig(mesh: open3d.geometry.TriangleMesh) -> go.Figure:
         )
     )
     return fig
+
+
+def show_point_cloud(point_cloud: open3d.geometry.PointCloud):
+    # pandas data frame for the scatter plot
+    points = np.asarray(point_cloud.points)
+    frm = pd.DataFrame(data=points, columns=["X", "Y", "Z"])
+
+    pc_fig = px.scatter_3d(
+        frm,
+        x="X",
+        y="Z",
+        z="Y",
+        color="Z",
+        color_continuous_scale=px.colors.sequential.Viridis,
+    )
+    pc_fig.update_traces(marker_size=1)
+
+    pc_fig.show()

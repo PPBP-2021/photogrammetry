@@ -1,0 +1,9 @@
+{
+    "front_image_pair": ["Minecraft360_front_L.png", "Minecraft360_front_R.png"],
+    "back_image_pair": ["Minecraft360_back_L.png", "Minecraft360_back_R.png"],
+    "left_image_pair": ["Minecraft360_left_L.png", "Minecraft360_left_R.png"],
+    "right_image_pair": ["Minecraft360_right_L.png", "Minecraft360_right_R.png"],
+    "baseline": 0.8,
+    "focal_length": 0.1,
+    "fov": 60
+}

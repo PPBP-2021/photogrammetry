@@ -31,9 +31,10 @@ layout = html.Div(
                     id="minDisparity",
                     min=-128,
                     step=16,
-                    max=0,
+                    max=128,
                     value=0,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -49,21 +50,23 @@ layout = html.Div(
                     max=12 * 16,
                     value=8 * 16,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
-                        "window_size",
+                        "block_size",
                         title="Matched block size. It must be an odd number >=1 . Normally, it should be somewhere in the 3..11 range.",
                     ),
                     className="lead",
                 ),
                 dcc.Slider(
-                    id="window_size",
+                    id="block_size",
                     min=1,
                     step=2,
                     max=15,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -79,6 +82,7 @@ layout = html.Div(
                     max=50,
                     value=4,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -94,6 +98,7 @@ layout = html.Div(
                     max=25,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -109,6 +114,7 @@ layout = html.Div(
                     max=200,
                     value=200,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -124,6 +130,7 @@ layout = html.Div(
                     max=5,
                     value=5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -139,11 +146,12 @@ layout = html.Div(
                     max=1,
                     value=0.5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
                         "3D z-scale",
-                        title="Choose the method to scale the depth values (z) of the litophane",
+                        title="Choose the method to scale the depth values (z) of the point_cloud",
                     ),
                     className="lead",
                 ),
