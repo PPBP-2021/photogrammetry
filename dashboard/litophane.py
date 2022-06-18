@@ -23,6 +23,7 @@ from modelbuilder import litophane_from_image
 
 CURRENT_SEG = None
 CURRENT_PATH = None
+# ToDO: Remove Globals, use dcc.Storage instead
 
 
 def _create_segmentation_fig(seg_img):

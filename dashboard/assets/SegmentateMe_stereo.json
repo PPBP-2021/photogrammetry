@@ -1,0 +1,7 @@
+{
+    "left_image": "SegmentateMe.jpg",
+    "right_image": "SegmentateMe.jpg",
+    "baseline": 0.065,
+    "focal_length": 0.05,
+    "fov": 39.5978
+}

@@ -129,7 +129,7 @@ def update_final_model(
         *properties,
     )
 
-    disparity_front = segmentate_disparity(disparity_front, explain=True)
+    disparity_front = segmentate_disparity(disparity_front, explain=False)
 
     disparity_back = dp.disparity_simple(
         img_back_L,  # type: ignore
@@ -182,10 +182,15 @@ def update_final_model(
         color_continuous_scale=px.colors.sequential.Viridis,
     )
 
+    # Concatenate all disparity maps to one figure
+    disp_f_b = np.concatenate((disparity_front, disparity_back), axis=1)
+    disp_l_r = np.concatenate((disparity_left, disparity_right), axis=1)
+    disp_f_b_l_r = np.concatenate((disp_f_b, disp_l_r), axis=0)
+
     # create figures to show on website
-    titles = ["Front disparity", "Point Cloud"]
+    titles = ["Disparities", "Point Cloud"]
     figures = [
-        px.imshow(disparity_front, color_continuous_scale="gray").update_layout(
+        px.imshow(disp_f_b_l_r, color_continuous_scale="gray").update_layout(
             margin=dict(b=0, l=0, r=0, t=0)
         ),
         pc_fig,

@@ -111,21 +111,19 @@ def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.nda
     """
 
     ret, th = cv2.threshold(disparity, 200, 255, cv2.THRESH_BINARY)
+    return cv2.bitwise_and(
+        disparity, disparity, mask=th
+    )  # ToDo: Either remove unused code or Fix it
 
     kernel = np.ones((15, 15), np.uint8)
+    # Returning dilate would add lower pixel values than the threshold back into the image
     dilate = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel, 3)
 
     dilate = cv2.bitwise_and(disparity, disparity, mask=dilate)
 
-    return dilate
-
-    # Step 4: Find largest contour
     largest_cntr = np.zeros(disparity.shape, dtype=disparity.dtype)
-
     contours, hierarchy = cv2.findContours(dilate, 2, 1)
-
     largest_cntr_indx = max(enumerate(contours), key=lambda x: cv2.contourArea(x[1]))[0]
-    bounding_rect = cv2.boundingRect(contours[largest_cntr_indx])
 
     largest_cntr = cv2.drawContours(
         image=largest_cntr,
@@ -140,6 +138,5 @@ def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.nda
         imgutils.show_img(largest_cntr, title="Largest Contour")
 
     image = cv2.bitwise_and(disparity, disparity, mask=largest_cntr)
-    x, y, w, h = bounding_rect
 
-    return image[y : y + h, x : x + w]  # type: ignore
+    return dilate

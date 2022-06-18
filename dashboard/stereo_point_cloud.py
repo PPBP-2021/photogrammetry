@@ -51,6 +51,7 @@ def _select_scaling(radio_choice: str) -> Callable[[float], float]:
     }.get(radio_choice, lambda z: z)
 
 
+# noinspection PyIncorrectDocstring
 def update_stereo_point_cloud(
     img_dict: dict,
     properties: List[int],
@@ -88,9 +89,7 @@ def update_stereo_point_cloud(
 
     # resize image
     img_left = cv2.resize(img_left, (0, 0), fx=resolution, fy=resolution)
-    img_left_bgr = cv2.resize(img_left_bgr, (0, 0), fx=resolution, fy=resolution)
     img_right = cv2.resize(img_right, (0, 0), fx=resolution, fy=resolution)
-    img_right_bgr = cv2.resize(img_right_bgr, (0, 0), fx=resolution, fy=resolution)
 
     # rectify images
     img_left_rect, img_right_rect = rf.rectify(img_left, img_right)
@@ -100,9 +99,6 @@ def update_stereo_point_cloud(
         img_right_rect,  # type: ignore
         *properties,
     )
-
-    # ToDo: Add disparity cutoff threshold
-    # disparity[disparity < 100] = 255
 
     # calculate the stereo_point_cloud
     lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(

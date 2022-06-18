@@ -2,6 +2,7 @@ from dash import dcc
 
 from dashboard.layout import navbar
 
+# ToDo: Write our own text
 layout = [
     navbar.layout,
     dcc.Markdown(

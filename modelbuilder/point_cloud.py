@@ -59,10 +59,15 @@ def calculate_point_cloud_final_model(
     X = np.array([i / height for i in range(width)] * height)
     Y = np.array([(height - i // width) / height for i in range(height * width)])
 
-    Z_front = ((baseline * focal_length) / disparity_front).reshape(height * width)
-    Z_back = ((baseline * focal_length) / disparity_back).reshape(height * width)
-    Z_left = ((baseline * focal_length) / disparity_left).reshape(height * width)
-    Z_right = ((baseline * focal_length) / disparity_right).reshape(height * width)
+    z_scale = cast(Callable[[np.ndarray], np.ndarray], z_scale)
+    Z_front = z_scale((baseline * focal_length) / disparity_front).reshape(
+        height * width
+    )
+    Z_back = z_scale((baseline * focal_length) / disparity_back).reshape(height * width)
+    Z_left = z_scale((baseline * focal_length) / disparity_left).reshape(height * width)
+    Z_right = z_scale((baseline * focal_length) / disparity_right).reshape(
+        height * width
+    )
 
     def cutoff(Z, X, Y, cutoff_value_min):
         keep = np.where(Z > cutoff_value_min)[0]
@@ -80,10 +85,10 @@ def calculate_point_cloud_final_model(
     ratio = width / height
     # Use -Z for front to fix X axis
     # TODO fix rotations and transformations
-    xyz_front = np.stack((f_x, f_y, -f_z + ratio), axis=1)
-    xyz_left = np.stack((-l_z + ratio, l_y, l_x), axis=1)
-    xyz_back = np.stack((b_x, b_y, b_z), axis=1)
-    xyz_right = np.stack((r_z, r_y, r_x), axis=1)
+    xyz_front = np.stack((f_x - ratio / 2, f_y, f_z - ratio), axis=1)
+    xyz_left = np.stack((l_z - ratio, l_y, l_x - ratio / 2), axis=1)
+    xyz_back = np.stack((b_x - ratio / 2, b_y, (-b_z) + ratio), axis=1)
+    xyz_right = np.stack((-r_z + ratio, r_y, r_x - ratio / 2), axis=1)
 
     total_point_cloud = np.concatenate(
         (xyz_front, xyz_left, xyz_back, xyz_right), axis=0

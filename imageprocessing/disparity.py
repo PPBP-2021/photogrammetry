@@ -5,6 +5,8 @@ from typing import Union
 import cv2
 import numpy as np
 
+# ToDo: differences between both implementations???? Maybe show comparisons or a writeup.
+
 
 def match_keypoints(
     img_left: np.ndarray, img_right: np.ndarray

@@ -8,6 +8,8 @@ from plotly.subplots import make_subplots
 
 import image_utils as imgutils
 
+# ToDo: Add own comments/explanations, at least for presentation purposes
+
 
 def rectify(
     img_l: np.ndarray, img_r: np.ndarray, *, explain: bool = False

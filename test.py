@@ -11,6 +11,8 @@ import modelbuilder as mb
 from imageprocessing import disparity as dp
 from imageprocessing import rectify
 
+# ToDo: Maybe turn this into a single script with lots of explanation for presentation purposes
+
 """SIMPLE DISPARITY MAP ONLY USING CV2.STEREO_BM"""
 '''stereo_left_img_bgr = cv2.imread("dashboard/assets/Manuel_L.jpg")
 stereo_right_img_bgr = cv2.imread("dashboard/assets/Manuel_R.jpg")

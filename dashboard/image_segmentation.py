@@ -1,6 +1,3 @@
-import os
-from typing import List
-
 import cv2
 import dash
 import plotly.express as px
@@ -13,6 +10,8 @@ from dashboard.instance import app
 from dashboard.layout import image_picker_stereo
 from dashboard.layout import navbar
 from imageprocessing import segmentate_grayscale
+
+# ToDo: Add new images, add _segmentation.json files
 
 
 layout = [

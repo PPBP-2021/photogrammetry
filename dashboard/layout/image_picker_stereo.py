@@ -6,6 +6,9 @@ from dash import html
 import dashboard.layout_utils.assets as assets
 
 
+# ToDo, Create ImagePicker for segmentate images
+
+
 @functools.lru_cache()
 def get_image_cards():
     cards = []
