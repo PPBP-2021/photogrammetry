@@ -11,9 +11,6 @@ from dashboard.layout import image_picker_segmentate
 from dashboard.layout import navbar
 from imageprocessing import segmentate_grayscale
 
-# ToDo: Add new images, add _segmentation.json files
-
-
 layout = [
     image_picker_segmentate.layout,  # the image picker on the very left side
     navbar.layout,  # navigation on top of the website
@@ -36,7 +33,6 @@ layout = [
     ],
 )
 def select_image(*image_path):
-
     ctx = dash.callback_context
     image_path = ctx.triggered[0]["prop_id"].replace(".n_clicks", "")
 
