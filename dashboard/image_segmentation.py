@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import cv2
@@ -11,11 +12,14 @@ import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
 from dashboard.layout import image_picker_segmentate
 from dashboard.layout import navbar
+from dashboard.layout import segmentation_properties
 from imageprocessing import segmentate_grayscale
+
 
 layout = [
     dcc.Store(id="memory-segmentate", storage_type="session"),
     image_picker_segmentate.layout,  # the image picker on the very left side
+    segmentation_properties.layout,  # the properties on the right side
     navbar.layout,  # navigation on top of the website
     html.Div(
         dcc.Loading(html.Div([], id="graphs-out")),
@@ -37,11 +41,12 @@ layout = [
         "image_buttons": [
             dash.Input(image_id[0].stem, "n_clicks")
             for image_id in assets.get_asset_images_segmentate()
-        ]
+        ],
+        "grayscale_threshold": dash.Input("grayscaleThreshold", "value"),
     },
     state={"memory": dash.State("memory-segmentate", "data")},
 )
-def select_image(image_buttons: list, memory: dict):
+def select_image(image_buttons: list, grayscale_threshold: int, memory: dict):
     if memory is None:
         memory = {}
 
@@ -79,7 +84,9 @@ def select_image(image_buttons: list, memory: dict):
             ),
         ),
         px.imshow(
-            cv2.cvtColor(segmentate_grayscale(file_path, 240), cv2.COLOR_BGR2RGB)
+            cv2.cvtColor(
+                segmentate_grayscale(file_path, grayscale_threshold), cv2.COLOR_BGR2RGB
+            )
         ).update_layout(
             template="plotly_white",
             plot_bgcolor="rgba(0, 0, 0, 0)",
