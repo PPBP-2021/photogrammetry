@@ -1,3 +1,5 @@
+from typing import Optional
+
 import cv2
 import dash
 import plotly.express as px
@@ -12,6 +14,7 @@ from dashboard.layout import navbar
 from imageprocessing import segmentate_grayscale
 
 layout = [
+    dcc.Store(id="memory-segmentate", storage_type="session"),
     image_picker_segmentate.layout,  # the image picker on the very left side
     navbar.layout,  # navigation on top of the website
     html.Div(
@@ -26,22 +29,42 @@ layout = [
 
 
 @app.callback(
-    dash.Output("graphs-out", "children"),
-    [
-        dash.Input(image_id[0].stem, "n_clicks")
-        for image_id in assets.get_asset_images_segmentate()
+    output=[
+        dash.Output("graphs-out", "children"),
+        dash.Output("memory-segmentate", "data"),
     ],
+    inputs={
+        "image_buttons": [
+            dash.Input(image_id[0].stem, "n_clicks")
+            for image_id in assets.get_asset_images_segmentate()
+        ]
+    },
+    state={"memory": dash.State("memory-segmentate", "data")},
 )
-def select_image(*image_path):
+def select_image(image_buttons: list, memory: dict):
+    if memory is None:
+        memory = {}
+
     ctx = dash.callback_context
-    image_path = ctx.triggered[0]["prop_id"].replace(".n_clicks", "")
+    prop_id = ctx.triggered[0]["prop_id"]
 
-    file_path = ""
-    for image in assets.get_asset_images_segmentate():
-        if image_path in str(image[0]):
-            file_path = str(image[0])
-            break
+    # Only image button has .n_clicks property.
+    is_property = prop_id.replace(".n_clicks", "") == prop_id
 
+    selected_image: Optional[str] = memory.get("selected_image", None)
+    image_button_name: Optional[str] = selected_image
+
+    if is_property and selected_image is None:
+        return None, {}
+    elif not is_property:  # A button was clicked
+        image_button_name = prop_id.replace(
+            ".n_clicks", ""
+        )  # get the image name from the button
+
+    img_dict = assets.get_asset_image_dict_segmentate(
+        image_button_name
+    )  # get the dict with the actual image path
+    file_path = img_dict["image"]
     titles = ["Before", "Segmentated"]
     figures = [
         px.imshow(cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB)).update_layout(
@@ -70,4 +93,5 @@ def select_image(*image_path):
         ),
     ]
 
-    return graphs.create_graph_card_vertical(titles, figures)
+    memory["selected_image"] = image_button_name
+    return graphs.create_graph_card_vertical(titles, figures), memory
