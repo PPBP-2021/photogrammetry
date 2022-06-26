@@ -1,7 +1,6 @@
 from typing import Any
 from typing import Callable
-from typing import cast
-from typing import Tuple
+from typing import Optional
 
 import cv2
 import dash
@@ -20,10 +19,6 @@ from dashboard.layout import navbar
 from image_utils import triangle_mesh_to_fig
 from imageprocessing import segmentate_grayscale
 from modelbuilder import litophane_from_image
-
-CURRENT_SEG = None
-CURRENT_PATH = None
-# ToDO: Remove Globals, use dcc.Storage instead
 
 
 def _create_segmentation_fig(seg_img):
@@ -44,6 +39,7 @@ def _create_segmentation_fig(seg_img):
 
 
 layout = [
+    dcc.Store(id="memory-lito", storage_type="session"),
     image_picker_stereo.layout,  # the image picker on the very left side
     litophane_properties.layout,  # properties on the very right side
     navbar.layout,  # navigation on top of the website
@@ -77,7 +73,7 @@ def _select_scaling(radio_choice: str) -> Callable[[float], float]:
     }.get(radio_choice, lambda z: z)
 
 
-def _update_grayscale(treshold, asset_images=None, image_path=None):
+def _update_segmentation(treshold, asset_images=None, image_path=None):
     """Update the current grayscale image with new treshold or optionally new image
 
     Parameters
@@ -89,73 +85,76 @@ def _update_grayscale(treshold, asset_images=None, image_path=None):
     assets : Optional[List[Tuple[pathlib.Path, pathlib.Path, dict]]]
         All possible image pair path Triples to choose from.
     """
-    global CURRENT_SEG
-    global CURRENT_PATH
 
-    # if this function gets no new image path it takes the saved one
-    if not image_path:
-        image_path = CURRENT_PATH
-    else:
-        for image in asset_images:
-            if image_path in str(image[0]):
-                image_path = str(image[0])
+    for image in asset_images:
+        if image_path in str(image[0]):
+            image_path = str(image[0])
 
-    CURRENT_SEG = segmentate_grayscale(image_path, treshold)
-    CURRENT_PATH = image_path
+    return segmentate_grayscale(image_path, treshold)
 
 
 @app.callback(
     dash.Output("graphs-out-lito", "children"),
-    [
-        dash.Input(image_id[0].stem, "n_clicks")
-        for image_id in assets.get_asset_images_stereo()
-    ]
-    + [
-        dash.Input("gray_treshold", "value"),
-        dash.Input("resolution", "value"),
-        dash.Input("z_scale", "value"),
-    ],
+    dash.Output("memory-lito", "data"),
+    inputs={
+        "image_buttons": [
+            dash.Input(image_id[0].stem, "n_clicks")
+            for image_id in assets.get_asset_images_stereo()
+        ],
+        "gray_treshold": dash.Input("gray_treshold", "value"),
+        "resolution": dash.Input("resolution", "value"),
+        "z_scale": dash.Input("z_scale", "value"),
+    },
+    state={"memory": dash.State("memory-lito", "data")},
 )
-def select_image(*inputs: Tuple[Any]):
-    global CURRENT_SEG
-    asset_images = assets.get_asset_images_stereo()
+def select_image(
+    image_buttons: list,
+    gray_treshold: float,
+    resolution: float,
+    z_scale: str,
+    memory: dict,
+):
 
-    # update all our property values
-    gray_treshold: float = cast(float, inputs[-3])
-    resolution_scale: float = cast(float, inputs[-2])
-    radio_z_scale_choice: str = cast(str, inputs[-1])
+    if memory is None:
+        memory = {}
+
+    asset_images = assets.get_asset_images_stereo()
 
     ctx = dash.callback_context
     prop_id = ctx.triggered[0]["prop_id"]
+
+    selected_image: Optional[str] = memory.get("selected_image", None)
+    image_path: Optional[str] = selected_image
 
     # Only image button has .n_clicks property.
     # Thus if its still the same as before, it was only a value change
     is_property = prop_id.replace(".n_clicks", "") == prop_id
 
     # no current image selected, but properties changed. -> Do nothing
-    if is_property and CURRENT_PATH is None:
-        return
+    if is_property and selected_image is None:
+        return None, {}
 
     # The input that triggered this callback was the change of an image
     elif not is_property:
         # inside the buttons id we stored its asset path, thus remove nclicks
         image_path = prop_id.replace(".n_clicks", "")
-        _update_grayscale(gray_treshold, asset_images, image_path)
+        gray_seg = _update_segmentation(gray_treshold, asset_images, image_path)
 
     # The input that triggered this callback was a property change
     else:
         prop = prop_id.replace(".value", "")
         # The input property was the threshold for our grayscale
         if prop == "gray_treshold":
-            _update_grayscale(gray_treshold)
+            gray_seg = _update_segmentation(gray_treshold, asset_images, image_path)
 
-    seg_fig = _create_segmentation_fig(CURRENT_SEG)
+    seg_fig = _create_segmentation_fig(gray_seg)
     lito_mesh = litophane_from_image(
-        CURRENT_SEG,
-        resolution=resolution_scale,
-        z_scale=_select_scaling(radio_z_scale_choice),
+        gray_seg,
+        resolution=resolution,
+        z_scale=_select_scaling(z_scale),
     )
     lito_fig = triangle_mesh_to_fig(lito_mesh)
     titles, figures = ["Segmentated", "3D Litophane"], [seg_fig, lito_fig]
 
-    return graphs.create_graph_card_vertical(titles, figures)
+    memory["selected_image"] = image_path
+    return graphs.create_graph_card_vertical(titles, figures), memory
