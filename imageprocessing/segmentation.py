@@ -110,7 +110,9 @@ def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.nda
         np.ndarray holding all pixels in BGR format segmentated by the threshold.
     """
 
-    ret, th = cv2.threshold(disparity, 200, 255, cv2.THRESH_BINARY)
+    ret, th = cv2.threshold(
+        disparity, 200, 255, cv2.THRESH_BINARY
+    )  # ToDo: Maybe add Slider for this
     return cv2.bitwise_and(
         disparity, disparity, mask=th
     )  # ToDo: Either remove unused code or Fix it
