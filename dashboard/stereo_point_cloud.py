@@ -129,6 +129,8 @@ def update_stereo_point_cloud(
         marker={"color": [f"rgb({r},{g},{b})" for b, g, r in color.reshape(-1, 3)]},
     )
 
+    pc_fig.update_layout(scene=dict(aspectmode="data"))
+
     # create figures to show on website
     titles = ["Disparity Map", "Point Cloud"]
     figures = [

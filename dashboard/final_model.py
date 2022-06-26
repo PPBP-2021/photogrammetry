@@ -182,6 +182,8 @@ def update_final_model(
         color_continuous_scale=px.colors.sequential.Viridis,
     )
 
+    pc_fig.update_layout(scene=dict(aspectmode="data"))
+
     # Concatenate all disparity maps to one figure
     disp_f_b = np.concatenate((disparity_front, disparity_back), axis=1)
     disp_l_r = np.concatenate((disparity_left, disparity_right), axis=1)
