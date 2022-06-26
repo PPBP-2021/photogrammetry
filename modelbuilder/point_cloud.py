@@ -81,7 +81,7 @@ def calculate_point_cloud_final_model(
     l_x, l_y, l_z = cutoff(Z_left, X, Y, 0)
     r_x, r_y, r_z = cutoff(Z_right, X, Y, 0)
 
-    # width/heigh is the max X value
+    # width/height is the max X value
     ratio = width / height
     # Use -Z for front to fix X axis
     # TODO fix rotations and transformations
