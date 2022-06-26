@@ -19,6 +19,7 @@ from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from imageprocessing import disparity as dp
 from imageprocessing import rectify as rf
+from imageprocessing import segmentate_disparity
 
 # all different PROPERTIES that are used to calc the Disparity
 PROPERTIES: List[str] = [
@@ -56,6 +57,7 @@ def update_stereo_point_cloud(
     img_dict: dict,
     properties: List[int],
     resolution: float,
+    disparity_treshold: int,
     z_scale: Callable[[float], float] = lambda z: z,
 ):
     """Calculate the current stereo_point_cloud to be shown on the website togheter with its disparity map
@@ -99,6 +101,8 @@ def update_stereo_point_cloud(
         img_right_rect,  # type: ignore
         *properties,
     )
+
+    disparity = segmentate_disparity(disparity, disparity_treshold)
 
     # calculate the stereo_point_cloud
     lito_point_cloud = modelbuilder.calculate_stereo_point_cloud(
@@ -162,6 +166,7 @@ layout = [
         "stereo_properties": [dash.Input(prop, "value") for prop in PROPERTIES],
         "resolution": dash.Input("resolution_stereo", "value"),
         "z_scale": dash.Input("z_scale_stereo", "value"),
+        "disparity_treshold": dash.Input("treshold_stereo", "value"),
     },
     state={"memory": dash.State("memory-stereo-lito", "data")},
 )
@@ -170,6 +175,7 @@ def callback_stereo_lito(
     stereo_properties: List[int],
     resolution: float,
     z_scale: str,
+    disparity_treshold: int,
     memory: dict,
 ):
     """Callback function for the stereo point_cloud calculation."""
@@ -200,7 +206,11 @@ def callback_stereo_lito(
     img_dict = assets.get_asset_image_dict_stereo(image_path)
 
     titles, figures = update_stereo_point_cloud(
-        img_dict, stereo_properties, resolution, _select_scaling(z_scale)
+        img_dict,
+        stereo_properties,
+        resolution,
+        disparity_treshold,
+        _select_scaling(z_scale),
     )
 
     memory["selected_image"] = image_path

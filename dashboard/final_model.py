@@ -56,6 +56,7 @@ def update_final_model(
     img_dict: dict,
     properties: List[int],
     resolution: float,
+    disparity_treshold: int,
     z_scale: Callable[[float], float] = lambda z: z,
 ):
     """Calculate the current 3D Model to be shown on the website
@@ -129,7 +130,9 @@ def update_final_model(
         *properties,
     )
 
-    disparity_front = segmentate_disparity(disparity_front, explain=False)
+    disparity_front = segmentate_disparity(
+        disparity_front, disparity_treshold, explain=False
+    )
 
     disparity_back = dp.disparity_simple(
         img_back_L,  # type: ignore
@@ -137,7 +140,7 @@ def update_final_model(
         *properties,
     )
 
-    disparity_back = segmentate_disparity(disparity_back)
+    disparity_back = segmentate_disparity(disparity_back, disparity_treshold)
 
     disparity_left = dp.disparity_simple(
         img_left_L,  # type: ignore
@@ -145,7 +148,7 @@ def update_final_model(
         *properties,
     )
 
-    disparity_left = segmentate_disparity(disparity_left)
+    disparity_left = segmentate_disparity(disparity_left, disparity_treshold)
 
     disparity_right = dp.disparity_simple(
         img_right_L,  # type: ignore
@@ -153,7 +156,7 @@ def update_final_model(
         *properties,
     )
 
-    disparity_right = segmentate_disparity(disparity_right)
+    disparity_right = segmentate_disparity(disparity_right, disparity_treshold)
 
     # ToDo: Add disparity cutoff threshold
     # disparity[disparity < 100] = 255
@@ -224,6 +227,7 @@ layout = [
         "stereo_properties": [dash.Input(prop, "value") for prop in PROPERTIES],
         "resolution": dash.Input("resolution_stereo", "value"),
         "z_scale": dash.Input("z_scale_stereo", "value"),
+        "disparity_treshold": dash.Input("treshold_stereo", "value"),
     },
     state={"memory": dash.State("memory-final-model", "data")},
 )
@@ -232,6 +236,7 @@ def callback_final_model(
     stereo_properties: List[int],
     resolution: float,
     z_scale: str,
+    disparity_treshold: int,
     memory: dict,
 ):
     """Callback function for the 3D model calculation."""
@@ -262,7 +267,11 @@ def callback_final_model(
     img_dict = assets.get_asset_image_dict_final_model(image_path)
 
     titles, figures = update_final_model(
-        img_dict, stereo_properties, resolution, _select_scaling(z_scale)
+        img_dict,
+        stereo_properties,
+        resolution,
+        disparity_treshold,
+        _select_scaling(z_scale),
     )
 
     memory["selected_image"] = image_path

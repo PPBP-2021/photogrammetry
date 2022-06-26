@@ -63,7 +63,7 @@ def triangle_mesh_to_fig(mesh: open3d.geometry.TriangleMesh) -> go.Figure:
     )
 
     layout = go.Layout(
-        paper_bgcolor="rgb(1,1,1)", font_color="white", scene=dict(aspectmode="data")
+        paper_bgcolor="rgb(1,1,1)", font_color="white", scene=dict(aspectmode="auto")
     )
     fig = go.Figure(data=[mesh3D], layout=layout)
     fig.data[0].update(

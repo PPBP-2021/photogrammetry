@@ -94,7 +94,9 @@ def segmentate_grayscale(
     return image[y : y + h, x : x + w]  # type: ignore
 
 
-def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.ndarray:
+def segmentate_disparity(
+    disparity: np.ndarray, treshold: float = 0, explain: bool = False
+) -> np.ndarray:
     """Segmentates the given disparity map
 
     We want to segmentate the disparity so it only contains the main object of the image
@@ -103,6 +105,8 @@ def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.nda
     ----------
     disparity : np.ndarray, str
         The disparity map we want to segmentate to only contain the main objects
+    treshold : float
+        treshold used to cut off unimportant objects
 
     Returns
     -------
@@ -110,7 +114,7 @@ def segmentate_disparity(disparity: np.ndarray, explain: bool = False) -> np.nda
         np.ndarray holding all pixels in BGR format segmentated by the threshold.
     """
 
-    ret, th = cv2.threshold(disparity, 200, 255, cv2.THRESH_BINARY)
+    ret, th = cv2.threshold(disparity, treshold, 255, cv2.THRESH_BINARY)
     return cv2.bitwise_and(
         disparity, disparity, mask=th
     )  # ToDo: Either remove unused code or Fix it

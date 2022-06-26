@@ -150,6 +150,22 @@ layout = html.Div(
                 ),
                 html.P(
                     html.Abbr(
+                        "Disparity Treshold",
+                        title="Adjust disparity cutoff to cutoff far away objects",
+                    ),
+                    className="lead",
+                ),
+                dcc.Slider(
+                    id="treshold_stereo",
+                    min=0,
+                    step=1,
+                    max=254,
+                    value=200,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
+                ),
+                html.P(
+                    html.Abbr(
                         "3D z-scale",
                         title="Choose the method to scale the depth values (z) of the point_cloud",
                     ),
