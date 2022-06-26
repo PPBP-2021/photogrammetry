@@ -7,7 +7,7 @@ from dash import html
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
 from dashboard.instance import app
-from dashboard.layout import image_picker_stereo
+from dashboard.layout import image_picker_segmentate
 from dashboard.layout import navbar
 from imageprocessing import segmentate_grayscale
 
@@ -15,7 +15,7 @@ from imageprocessing import segmentate_grayscale
 
 
 layout = [
-    image_picker_stereo.layout,  # the image picker on the very left side
+    image_picker_segmentate.layout,  # the image picker on the very left side
     navbar.layout,  # navigation on top of the website
     html.Div(
         dcc.Loading(html.Div([], id="graphs-out")),
@@ -32,7 +32,7 @@ layout = [
     dash.Output("graphs-out", "children"),
     [
         dash.Input(image_id[0].stem, "n_clicks")
-        for image_id in assets.get_asset_images_stereo()
+        for image_id in assets.get_asset_images_segmentate()
     ],
 )
 def select_image(*image_path):
@@ -41,7 +41,7 @@ def select_image(*image_path):
     image_path = ctx.triggered[0]["prop_id"].replace(".n_clicks", "")
 
     file_path = ""
-    for image in assets.get_asset_images_stereo():
+    for image in assets.get_asset_images_segmentate():
         if image_path in str(image[0]):
             file_path = str(image[0])
             break

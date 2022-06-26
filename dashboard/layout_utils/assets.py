@@ -4,6 +4,50 @@ from pathlib import Path
 
 
 @functools.lru_cache()
+def get_asset_images_segmentate():
+    """Get all images in the assets directory.
+
+    Returns
+    -------
+    List[Tuple[pathlib.Path, dict]]
+        List of Tuples, containing the path for the image and the dict with the image's path.
+    """
+
+    asset_path = Path("./dashboard/assets")
+    configs = [p for p in asset_path.iterdir() if str(p).endswith("segmentate.json")]
+    returns = []
+    for config in configs:
+        with open(config) as f:
+            config = json.load(f)
+            returns.append((asset_path / config["image"], config))
+
+    return returns
+
+
+@functools.lru_cache(maxsize=8)
+def get_asset_image_dict_segmentate(image_path: str):
+    """Get the image dict for the given image path.
+
+    Parameters
+    ----------
+    image_path : str
+        The name of the image, given from the image button.
+
+    Returns
+    -------
+    dict
+        The image dict.
+    """
+    for image in get_asset_images_segmentate():
+        if image_path in str(image[0]):
+            # Update the image dict with the real image path
+            image[1]["image"] = str(image[0])
+            return image[1]
+
+    raise ValueError(f"No image found for {image_path}")
+
+
+@functools.lru_cache()
 def get_asset_images_stereo():
     """Get all images in the assets directory.
 
