@@ -69,19 +69,20 @@ def calculate_point_cloud_final_model(
         height * width
     )
 
-    def cutoff(Z, X, Y, cutoff_value_min):
-        keep = np.where(Z > cutoff_value_min)[0]
+    # Remove points with zero depth, these are not useful for the final model
+    def cutoff(Z, X, Y):
+        keep = np.where(Z > 0)[0]
         X = X[keep]
         Y = Y[keep]
         Z = Z[keep]
         return X, Y, Z
 
-    f_x, f_y, f_z = cutoff(Z_front, X, Y, 0)
-    b_x, b_y, b_z = cutoff(Z_back, X, Y, 0)
-    l_x, l_y, l_z = cutoff(Z_left, X, Y, 0)
-    r_x, r_y, r_z = cutoff(Z_right, X, Y, 0)
+    f_x, f_y, f_z = cutoff(Z_front, X, Y)
+    b_x, b_y, b_z = cutoff(Z_back, X, Y)
+    l_x, l_y, l_z = cutoff(Z_left, X, Y)
+    r_x, r_y, r_z = cutoff(Z_right, X, Y)
 
-    # width/heigh is the max X value
+    # width/height is the max X value
     ratio = width / height
     # Use -Z for front to fix X axis
     # TODO fix rotations and transformations

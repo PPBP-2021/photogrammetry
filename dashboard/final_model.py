@@ -158,9 +158,6 @@ def update_final_model(
 
     disparity_right = segmentate_disparity(disparity_right, disparity_treshold)
 
-    # ToDo: Add disparity cutoff threshold
-    # disparity[disparity < 100] = 255
-
     # calculate the 3D model point cloud
     final_point_cloud = modelbuilder.calculate_point_cloud_final_model(
         disparity_front,
