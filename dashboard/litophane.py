@@ -144,8 +144,7 @@ def select_image(
     else:
         prop = prop_id.replace(".value", "")
         # The input property was the threshold for our grayscale
-        if prop == "gray_treshold":
-            gray_seg = _update_segmentation(gray_treshold, asset_images, image_path)
+        gray_seg = _update_segmentation(gray_treshold, asset_images, image_path)
 
     seg_fig = _create_segmentation_fig(gray_seg)
     lito_mesh = litophane_from_image(
