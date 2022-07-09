@@ -75,7 +75,7 @@ def rectify(
             img_l, kp_l, img_r, kp_r, matches[300:500], None, **draw_params
         )
 
-        imgutils.show_img(keypoint_matches)
+        imgutils.show_img(keypoint_matches, title="Keypoint Matches")
 
     # ------------------------------------------------------------
     # STEREO RECTIFICATION
@@ -115,7 +115,7 @@ def rectify(
         lines1 = cv2.computeCorrespondEpilines(
             cast(np.ndarray, pts_r).reshape(-1, 1, 2), 2, fundamental_matrix
         )
-        lines1 = lines1.reshape(-1, 3)
+        lines1 = lines1.reshape(-1, 3)[0:30]
         img5, img6 = drawlines(img_l, img_r, lines1, pts_l, pts_r)
 
         # Find epilines corresponding to points in left image (first image) and
@@ -123,13 +123,10 @@ def rectify(
         lines2 = cv2.computeCorrespondEpilines(
             cast(np.ndarray, pts_l).reshape(-1, 1, 2), 1, fundamental_matrix
         )
-        lines2 = lines2.reshape(-1, 3)
+        lines2 = lines2.reshape(-1, 3)[0:30]
         img3, img4 = drawlines(img_r, img_l, lines2, pts_r, pts_l)
 
-        fig = make_subplots(rows=1, cols=2)
-        fig.add_trace(px.imshow(img5).data[0], row=1, col=1)
-        fig.add_trace(px.imshow(img3).data[0], row=1, col=2)
-        fig.show()
+        imgutils.show_img(np.hstack((img5, img3)), title="Epipolar lines")
 
     # Stereo rectification (uncalibrated variant)
     # Adapted from: https://stackoverflow.com/a/62607343
@@ -149,9 +146,8 @@ def rectify(
         cv2.imwrite("rectified_2.png", img_r_rectified)
 
         # Draw the rectified images
-        fig = make_subplots(rows=1, cols=2)
-        fig.add_trace(px.imshow(img_l_rectified).data[0], row=1, col=1)
-        fig.add_trace(px.imshow(img_r_rectified).data[0], row=1, col=2)
-        fig.show()
+        imgutils.show_img(
+            np.hstack((img_l_rectified, img_r_rectified)), title="Rectified images"
+        )
 
     return img_l_rectified, img_r_rectified
