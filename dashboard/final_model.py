@@ -12,6 +12,7 @@ from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
+import image_utils
 import modelbuilder
 from dashboard.instance import app
 from dashboard.layout import image_picker_final_model
@@ -190,12 +191,15 @@ def update_final_model(
     disp_f_b_l_r = np.concatenate((disp_f_b, disp_l_r), axis=0)
 
     # create figures to show on website
-    titles = ["Disparities", "Point Cloud"]
+    titles = ["Disparities", "Point Cloud", "Mesh"]
     figures = [
         px.imshow(disp_f_b_l_r, color_continuous_scale="gray").update_layout(
             margin=dict(b=0, l=0, r=0, t=0)
         ),
         pc_fig,
+        image_utils.triangle_mesh_to_fig(
+            modelbuilder.point_cloud_to_mesh(final_point_cloud)
+        ),
     ]
 
     return titles, figures
