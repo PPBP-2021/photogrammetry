@@ -1,0 +1,7 @@
+{
+    "left_image": "statueduck_L.jpg",
+    "right_image": "statueduck_R.jpg",
+    "baseline": 0.065,
+    "focal_length": 0.05,
+    "fov": 39.5978
+}

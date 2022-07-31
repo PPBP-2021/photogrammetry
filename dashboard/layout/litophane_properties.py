@@ -34,6 +34,7 @@ layout = html.Div(
                     max=255,
                     value=240,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(
@@ -49,6 +50,7 @@ layout = html.Div(
                     max=1,
                     value=0.5,
                     tooltip={"placement": "bottom", "always_visible": True},
+                    marks=None,
                 ),
                 html.P(
                     html.Abbr(

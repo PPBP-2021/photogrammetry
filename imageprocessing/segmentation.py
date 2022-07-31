@@ -92,3 +92,55 @@ def segmentate_grayscale(
     x, y, w, h = bounding_rect
 
     return image[y : y + h, x : x + w]  # type: ignore
+
+
+def segmentate_disparity(
+    disparity: np.ndarray, treshold: float = 0, explain: bool = False
+) -> np.ndarray:
+    """Segmentates the given disparity map
+
+    We want to segmentate the disparity so it only contains the main object of the image
+
+    Parameters
+    ----------
+    disparity : np.ndarray, str
+        The disparity map we want to segmentate to only contain the main objects
+    treshold : float
+        treshold used to cut off unimportant objects
+
+    Returns
+    -------
+    np.ndarray
+        np.ndarray holding all pixels in BGR format segmentated by the threshold.
+    """
+
+    ret, th = cv2.threshold(disparity, treshold, 255, cv2.THRESH_BINARY)
+    return cv2.bitwise_and(
+        disparity, disparity, mask=th
+    )  # ToDo: Either remove unused code or Fix it
+
+    kernel = np.ones((15, 15), np.uint8)
+    # Returning dilate would add lower pixel values than the threshold back into the image
+    dilate = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel, 3)
+
+    dilate = cv2.bitwise_and(disparity, disparity, mask=dilate)
+
+    largest_cntr = np.zeros(disparity.shape, dtype=disparity.dtype)
+    contours, hierarchy = cv2.findContours(dilate, 2, 1)
+    largest_cntr_indx = max(enumerate(contours), key=lambda x: cv2.contourArea(x[1]))[0]
+
+    largest_cntr = cv2.drawContours(
+        image=largest_cntr,
+        contours=contours,
+        contourIdx=largest_cntr_indx,
+        color=255,
+        thickness=cv2.FILLED,
+        hierarchy=hierarchy,
+    )
+
+    if explain:
+        imgutils.show_img(largest_cntr, title="Largest Contour")
+
+    image = cv2.bitwise_and(disparity, disparity, mask=largest_cntr)
+
+    return dilate

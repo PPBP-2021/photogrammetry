@@ -1,0 +1,9 @@
+{
+    "front_image_pair": ["borderlands_FL.jpg", "borderlands_FR.jpg"],
+    "back_image_pair": ["borderlands_BL.jpg", "borderlands_BR.jpg"],
+    "left_image_pair": ["borderlands_LL.jpg", "borderlands_LR.jpg"],
+    "right_image_pair": ["borderlands_RL.jpg", "borderlands_RR.jpg"],
+    "baseline": 5,
+    "focal_length": 0.1,
+    "fov": 60
+}
