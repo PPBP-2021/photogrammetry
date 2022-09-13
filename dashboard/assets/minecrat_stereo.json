@@ -1,6 +1,6 @@
 {
-    "left_image": "M_L.png",
-    "right_image": "M_R.png",
+    "left_image": "minecraft_L.png",
+    "right_image": "minecraft_R.png",
     "baseline": 0.065,
     "focal_length": 0.05,
     "fov": 39.5978
