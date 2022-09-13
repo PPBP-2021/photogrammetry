@@ -1,5 +1,4 @@
 from typing import Callable
-from typing import cast
 
 import cv2
 import numpy as np

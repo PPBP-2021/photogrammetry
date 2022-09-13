@@ -9,7 +9,7 @@ import dashboard.layout_utils.assets as assets
 @functools.lru_cache()
 def get_image_cards():
     cards = []
-    for image in assets.get_asset_images_stereo():
+    for image in assets.get_asset_images_segmentate():
         card = dbc.Card(
             [
                 dbc.Button(

@@ -1,1 +1,2 @@
+from imageprocessing.segmentation import segmentate_disparity
 from imageprocessing.segmentation import segmentate_grayscale

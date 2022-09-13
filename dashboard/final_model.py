@@ -12,6 +12,7 @@ from dash import html
 
 import dashboard.layout_utils.assets as assets
 import dashboard.layout_utils.graphs as graphs
+import image_utils
 import modelbuilder
 from dashboard.instance import app
 from dashboard.layout import image_picker_final_model
@@ -19,6 +20,7 @@ from dashboard.layout import navbar
 from dashboard.layout import stereo_properties
 from imageprocessing import disparity as dp
 from imageprocessing import rectify as rf
+from imageprocessing import segmentate_disparity
 
 # all different PROPERTIES that are used to calc the Disparity maps
 PROPERTIES: List[str] = [
@@ -55,6 +57,7 @@ def update_final_model(
     img_dict: dict,
     properties: List[int],
     resolution: float,
+    disparity_treshold: int,
     z_scale: Callable[[float], float] = lambda z: z,
 ):
     """Calculate the current 3D Model to be shown on the website
@@ -128,11 +131,17 @@ def update_final_model(
         *properties,
     )
 
+    disparity_front = segmentate_disparity(
+        disparity_front, disparity_treshold, explain=False
+    )
+
     disparity_back = dp.disparity_simple(
         img_back_L,  # type: ignore
         img_back_R,  # type: ignore
         *properties,
     )
+
+    disparity_back = segmentate_disparity(disparity_back, disparity_treshold)
 
     disparity_left = dp.disparity_simple(
         img_left_L,  # type: ignore
@@ -140,14 +149,15 @@ def update_final_model(
         *properties,
     )
 
+    disparity_left = segmentate_disparity(disparity_left, disparity_treshold)
+
     disparity_right = dp.disparity_simple(
         img_right_L,  # type: ignore
         img_right_R,  # type: ignore
         *properties,
     )
 
-    # ToDo: Add disparity cutoff threshold
-    # disparity[disparity < 100] = 255
+    disparity_right = segmentate_disparity(disparity_right, disparity_treshold)
 
     # calculate the 3D model point cloud
     final_point_cloud = modelbuilder.calculate_point_cloud_final_model(
@@ -173,10 +183,23 @@ def update_final_model(
         color_continuous_scale=px.colors.sequential.Viridis,
     )
 
+    pc_fig.update_layout(scene=dict(aspectmode="data"))
+
+    # Concatenate all disparity maps to one figure
+    disp_f_b = np.concatenate((disparity_front, disparity_back), axis=1)
+    disp_l_r = np.concatenate((disparity_left, disparity_right), axis=1)
+    disp_f_b_l_r = np.concatenate((disp_f_b, disp_l_r), axis=0)
+
     # create figures to show on website
-    titles = ["Point Cloud"]
+    titles = ["Disparities", "Point Cloud", "Mesh"]
     figures = [
+        px.imshow(disp_f_b_l_r, color_continuous_scale="gray").update_layout(
+            margin=dict(b=0, l=0, r=0, t=0)
+        ),
         pc_fig,
+        image_utils.triangle_mesh_to_fig(
+            modelbuilder.point_cloud_to_mesh(final_point_cloud)
+        ),
     ]
 
     return titles, figures
@@ -207,6 +230,7 @@ layout = [
         "stereo_properties": [dash.Input(prop, "value") for prop in PROPERTIES],
         "resolution": dash.Input("resolution_stereo", "value"),
         "z_scale": dash.Input("z_scale_stereo", "value"),
+        "disparity_treshold": dash.Input("treshold_stereo", "value"),
     },
     state={"memory": dash.State("memory-final-model", "data")},
 )
@@ -215,6 +239,7 @@ def callback_final_model(
     stereo_properties: List[int],
     resolution: float,
     z_scale: str,
+    disparity_treshold: int,
     memory: dict,
 ):
     """Callback function for the 3D model calculation."""
@@ -245,7 +270,11 @@ def callback_final_model(
     img_dict = assets.get_asset_image_dict_final_model(image_path)
 
     titles, figures = update_final_model(
-        img_dict, stereo_properties, resolution, _select_scaling(z_scale)
+        img_dict,
+        stereo_properties,
+        resolution,
+        disparity_treshold,
+        _select_scaling(z_scale),
     )
 
     memory["selected_image"] = image_path
