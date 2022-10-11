@@ -63,22 +63,22 @@ So we decided to learn more about it and create our own photogrammetry project.
 
 In its simplest form an image is the projection of a 3D scene onto a 2D plane.
 This projection can be illustrated by the pinhole camera model.
+
 ![pinhole camera model](assets/home/opencv/pinhole_camera_model.png)
 
 Such a projection can be described by the following equation:
+
 ![intrinsic extrinsic projection](assets/home/intrinsic_extrinsic_projection.png)
 
 To get back to the 3D coordinates we need to invert the equation.
 This is not fully possible from a single image, but we can get a good approximation by using multiple images.
 For this we need to know the position of the camera in the 3D scene.
-Furthermore we assume that our cameras are perfectly coplanar, this means that the [epipolar lines](
-https://en.wikipedia.org/wiki/Epipolar_geometry) are perfectly horizontal.
-![epipolar lines co planar](assets/home/epipolar_lines_co_planar.png) ![3d reconstruction](
-assets/home/3d_reconstruction.png)
+Furthermore we assume that our cameras are perfectly coplanar, this means that the
+[epipolar lines](https://en.wikipedia.org/wiki/Epipolar_geometry) are perfectly horizontal.
+![epipolar lines co planar](assets/home/epipolar_lines_co_planar.png)
+![3d reconstruction](assets/home/3d_reconstruction.png)
 
 By exploiting the epipolar geometry we can triangulate the 3D coordinates of a point from two images.
-
-
 
 
 --------------------------
