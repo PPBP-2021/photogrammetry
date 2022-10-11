@@ -67,8 +67,8 @@ This projection can be illustrated by the pinhole camera model.
 
 Such a projection can be described by the following equation:
 ![intrinsic extrinsic projection](assets/home/intrinsic_extrinsic_projection.png)
-To get back to the 3D coordinates we need to invert the equation.
 
+To get back to the 3D coordinates we need to invert the equation.
 This is not fully possible from a single image, but we can get a good approximation by using multiple images.
 For this we need to know the position of the camera in the 3D scene.
 Furthermore we assume that our cameras are perfectly coplanar, this means that the [epipolar lines](
@@ -154,34 +154,38 @@ requires all pixels to be matched, while SIFT only matches unique keypoints).
 The resulting epipolar lines from the matched keypoints are used to transform the images so that the epipolar lines
 are horizontally aligned.
 
-
 ##### Results
+![rectified](assets/home/rectified.png)
 
 
 #### 2. Disparity Map
 We used the openCV StereoBSGM algorithm to perform a block/pixel matching between our rectified image pairs and to
 calculate the displacement vector between those blocks/pixels --> disparity map.
 ##### Problems when calculating disparity map
-- need of patterns on objects
+- pixel/block matching requires patterns
+    - it is impossible to match pixels between the images if every pixel has the same color
 - baseline shift between image pairs needs to be chosen so that an parallax effect can be seen
 - requires good depth of field
+    - if the depth of field is too small too much noise is introduced
+
 ##### Results
+![disparity](assets/home/disparity.png)
 
 #### 3. Stereo Point Cloud
-The depth of every pixel in the image can be recovered  of the disparity map by INSERT FORMULA as explained in the
-theory.
+The depth of each pixel is calculated by multiplying the disparity value with the baseline and the focal length.
+![z formula](assets/home/z_formula.png)
 
 ##### Results
+![stereo point cloud](assets/home/stereo_point_cloud.png)
 
 #### 3D Model / Mesh
 To create a full 3D Mesh out of our Point clouds we need to calculate such a point cloud for every side of an object
 (object from the left, right, top etc.)
-Then these different Models from different perspectives need to be matched togheter, which we did not further study
+Then these different Models from different perspectives need to be matched together, which we did not further study
 in our project, but which could probably again be done by some sort of keypoint matching.
 
 ##### Results
-
-
+![final model](assets/home/final_model.png)
 
 """,
         highlight_config={"theme": "dark"},
