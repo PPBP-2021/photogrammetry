@@ -75,6 +75,9 @@ This is not fully possible from a single image, but we can get a good approximat
 For this we need to know the position of the camera in the 3D scene.
 Furthermore we assume that our cameras are perfectly coplanar, this means that the
 [epipolar lines](https://en.wikipedia.org/wiki/Epipolar_geometry) are perfectly horizontal.
+
+
+
 ![epipolar lines co planar](assets/home/epipolar_lines_co_planar.png)
 ![3d reconstruction](assets/home/3d_reconstruction.png)
 
